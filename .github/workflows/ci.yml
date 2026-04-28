@@ -25,10 +25,10 @@ jobs:
 
       - name: Build Docker Image
         run: |
-          docker build -t ngbontsi/task-api:${{ github.sha }} .
+          docker build -t ndimphiwe/task-api:${{ github.sha }} .
 
       - name: Push to Docker Hub
         if: github.event_name == 'push'
         run: |
           echo ${{ secrets.DOCKER_PASSWORD }} | docker login -u ${{ secrets.DOCKER_USERNAME }} --password-stdin
-          docker push ngbontsi/task-api:${{ github.sha }}
+          docker push ndimphiwe/task-api:${{ github.sha }}
