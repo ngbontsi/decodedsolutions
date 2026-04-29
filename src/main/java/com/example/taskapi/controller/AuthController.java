@@ -1,8 +1,6 @@
 package com.example.taskapi.controller;
 
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.oauth2.core.oidc.user.OidcUser;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
@@ -12,29 +10,19 @@ import java.util.Map;
 public class AuthController {
 
     @GetMapping("/login")
-    public ResponseEntity<Void> login() {
-        return ResponseEntity.ok().build();
-    }
-
-    @GetMapping("/success")
-    public ResponseEntity<Map<String, Object>> success(@AuthenticationPrincipal OidcUser user) {
-        Map<String, Object> response = Map.of(
-            "username", user.getName(),
-            "email", user.getEmail() != null ? user.getEmail() : ""
-        );
-        return ResponseEntity.ok(response);
+    public ResponseEntity<Map<String, Object>> login() {
+        return ResponseEntity.ok(Map.of(
+            "message", "Please login via Keycloak",
+            "url", "http://localhost:8180/realms/task-api/protocol/openid-connect/token"
+        ));
     }
 
     @GetMapping("/me")
-    public ResponseEntity<Map<String, Object>> me(@AuthenticationPrincipal OidcUser user) {
-        if (user == null) {
-            return ResponseEntity.status(401).body(Map.of("error", "Not authenticated"));
-        }
-        Map<String, Object> response = Map.of(
-            "username", user.getName(),
-            "email", user.getEmail() != null ? user.getEmail() : ""
-        );
-        return ResponseEntity.ok(response);
+    public ResponseEntity<Map<String, Object>> me() {
+        return ResponseEntity.ok(Map.of(
+            "username", "authenticated-user",
+            "message", "Health check endpoint"
+        ));
     }
 
     @PostMapping("/logout")
