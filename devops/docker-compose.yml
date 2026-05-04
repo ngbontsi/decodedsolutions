@@ -1,6 +1,6 @@
 services:
   api-gateway:
-    build: ./api-gateway
+    build: ../backend/api-gateway
     ports:
       - "8080:8080"
     environment:
@@ -16,7 +16,7 @@ services:
       - platform-network
 
   auth-service:
-    build: ./auth-service
+    build: ../backend/auth-service
     environment:
       - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/authdb
       - SPRING_DATASOURCE_USERNAME=${DB_USERNAME}
@@ -28,7 +28,7 @@ services:
       - platform-network
 
   task-api:
-    build: ./task-api
+    build: ../backend/task-api
     environment:
       - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/taskdb
       - SPRING_DATASOURCE_USERNAME=${DB_USERNAME}
@@ -39,7 +39,7 @@ services:
       - platform-network
 
   restaurant-service:
-    build: ./restaurant-service
+    build: ../backend/restaurant-service
     environment:
       - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/restaurantdb
       - SPRING_DATASOURCE_USERNAME=${DB_USERNAME}
@@ -50,7 +50,7 @@ services:
       - platform-network
 
   guesthouse-service:
-    build: ./guesthouse-service
+    build: ../backend/guesthouse-service
     environment:
       - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/guesthousedb
       - SPRING_DATASOURCE_USERNAME=${DB_USERNAME}
@@ -61,7 +61,7 @@ services:
       - platform-network
 
   marketplace-service:
-    build: ./marketplace-service
+    build: ../backend/marketplace-service
     environment:
       - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/marketplacedb
       - SPRING_DATASOURCE_USERNAME=${DB_USERNAME}
