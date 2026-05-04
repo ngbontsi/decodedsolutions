@@ -31,3 +31,14 @@ Thumbs.db
 
 # Kubernetes (secrets)
 k8s/**-secret.yaml
+
+# Flutter
+task_app/build/
+task_app/.dart_tool/
+task_app/pubspec.lock
+task_app/.flutter-plugins
+task_app/.flutter-plugins-dependencies
+task_app/.metadata
+
+# Decoded solution platform (nested)
+decoded solution platform/

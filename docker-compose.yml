@@ -1,47 +1,96 @@
 services:
-  app:
-    build: .
+  api-gateway:
+    build: ./api-gateway
     ports:
       - "8080:8080"
     environment:
-      - SPRING_PROFILES_ACTIVE=docker
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/taskdb
-      - SPRING_DATASOURCE_USERNAME=taskuser
-      - SPRING_DATASOURCE_PASSWORD=taskpass
-      - KEYCLOAK_ISSUER_URI=http://keycloak:8080/realms/task-api
+      - JWT_SECRET=YourSuperSecretKeyForJWTTokenGenerationAndValidation2024!
+      - AUTH_SERVICE_URI=http://auth-service:8081
+      - RESTAURANT_SERVICE_URI=http://restaurant-service:8082
+      - GUESTHOUSE_SERVICE_URI=http://guesthouse-service:8083
+      - MARKETPLACE_SERVICE_URI=http://marketplace-service:8084
+      - TASK_API_URI=http://task-api:8085
+    depends_on:
+      - redis
+    networks:
+      - platform-network
+
+  auth-service:
+    build: ./auth-service
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/authdb
+      - SPRING_DATASOURCE_USERNAME=platformuser
+      - SPRING_DATASOURCE_PASSWORD=platformpass
+      - JWT_SECRET=YourSuperSecretKeyForJWTTokenGenerationAndValidation2024!
     depends_on:
       - db
-      - keycloak
     networks:
-      - task-network
+      - platform-network
+
+  task-api:
+    build: ./task-api
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/taskdb
+      - SPRING_DATASOURCE_USERNAME=platformuser
+      - SPRING_DATASOURCE_PASSWORD=platformpass
+    depends_on:
+      - db
+    networks:
+      - platform-network
+
+  restaurant-service:
+    build: ./restaurant-service
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/restaurantdb
+      - SPRING_DATASOURCE_USERNAME=platformuser
+      - SPRING_DATASOURCE_PASSWORD=platformpass
+    depends_on:
+      - db
+    networks:
+      - platform-network
+
+  guesthouse-service:
+    build: ./guesthouse-service
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/guesthousedb
+      - SPRING_DATASOURCE_USERNAME=platformuser
+      - SPRING_DATASOURCE_PASSWORD=platformpass
+    depends_on:
+      - db
+    networks:
+      - platform-network
+
+  marketplace-service:
+    build: ./marketplace-service
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/marketplacedb
+      - SPRING_DATASOURCE_USERNAME=platformuser
+      - SPRING_DATASOURCE_PASSWORD=platformpass
+    depends_on:
+      - db
+    networks:
+      - platform-network
 
   db:
     image: postgres:16-alpine
     environment:
-      - POSTGRES_DB=taskdb
-      - POSTGRES_USER=taskuser
-      - POSTGRES_PASSWORD=taskpass
+      - POSTGRES_USER=platformuser
+      - POSTGRES_PASSWORD=platformpass
     volumes:
       - postgres-data:/var/lib/postgresql/data
     networks:
-      - task-network
+      - platform-network
 
-  keycloak:
-    image: quay.io/keycloak/keycloak:23.0
-    environment:
-      - KEYCLOAK_ADMIN=admin
-      - KEYCLOAK_ADMIN_PASSWORD=admin
-    command: start-dev --import-realm
+  redis:
+    image: redis:7-alpine
     ports:
-      - "8180:8080"
-    volumes:
-      - ./keycloak:/opt/keycloak/data/import
+      - "6379:6379"
     networks:
-      - task-network
+      - platform-network
 
 volumes:
   postgres-data:
 
 networks:
-  task-network:
+  platform-network:
     driver: bridge

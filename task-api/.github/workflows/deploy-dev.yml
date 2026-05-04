@@ -1,0 +1,40 @@
+name: Deploy to Development
+
+on:
+  push:
+    branches: [develop]
+
+jobs:
+  deploy-dev:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: 'maven'
+
+      - name: Build and Package
+        run: mvn clean package -DskipTests -q
+
+      - name: Build Docker Image
+        run: |
+          docker build -t task-api:dev-${{ github.sha }} .
+
+      - name: Deploy to K8s
+        uses: azure/k8s-deploy@v4
+        with:
+          manifests: |
+            k8s/namespace.yaml
+            k8s/config.yaml
+            k8s/postgres.yaml
+            k8s/deployment.yaml
+            k8s/service.yaml
+          images: |
+            task-api:dev-${{ github.sha }}
+          namespace: task-api
+          kubeconfig: ${{ secrets.KUBE_CONFIG_DEV }}

@@ -1,0 +1,55 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: api-gateway
+  cloud:
+    gateway:
+      routes:
+        - id: auth-service
+          uri: ${AUTH_SERVICE_URI:http://localhost:8081}
+          predicates:
+            - Path=/api/auth/**
+
+        - id: restaurant-service
+          uri: ${RESTAURANT_SERVICE_URI:http://localhost:8082}
+          predicates:
+            - Path=/api/restaurant/**
+
+        - id: guesthouse-service
+          uri: ${GUESTHOUSE_SERVICE_URI:http://localhost:8083}
+          predicates:
+            - Path=/api/guesthouse/**
+
+        - id: marketplace-service
+          uri: ${MARKETPLACE_SERVICE_URI:http://localhost:8084}
+          predicates:
+            - Path=/api/marketplace/**
+
+        - id: task-api
+          uri: ${TASK_API_URI:http://localhost:8085}
+          predicates:
+            - Path=/api/tasks/**
+
+      globalcors:
+        cors-configurations:
+          '[/**]':
+            allowedOrigins:
+              - "*"
+            allowedMethods:
+              - GET
+              - POST
+              - PUT
+              - DELETE
+              - OPTIONS
+            allowedHeaders:
+              - "*"
+
+jwt:
+  secret: YourSuperSecretKeyForJWTTokenGenerationAndValidation2024!
+  expiration: 86400000
+
+logging:
+  level:
+    org.springframework.cloud.gateway: DEBUG
