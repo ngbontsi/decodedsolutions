@@ -4,7 +4,7 @@ services:
     ports:
       - "8080:8080"
     environment:
-      - JWT_SECRET=YourSuperSecretKeyForJWTTokenGenerationAndValidation2024!
+      - JWT_SECRET=${JWT_SECRET}
       - AUTH_SERVICE_URI=http://auth-service:8081
       - RESTAURANT_SERVICE_URI=http://restaurant-service:8082
       - GUESTHOUSE_SERVICE_URI=http://guesthouse-service:8083
@@ -19,9 +19,9 @@ services:
     build: ./auth-service
     environment:
       - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/authdb
-      - SPRING_DATASOURCE_USERNAME=platformuser
-      - SPRING_DATASOURCE_PASSWORD=platformpass
-      - JWT_SECRET=YourSuperSecretKeyForJWTTokenGenerationAndValidation2024!
+      - SPRING_DATASOURCE_USERNAME=${DB_USERNAME}
+      - SPRING_DATASOURCE_PASSWORD=${DB_PASSWORD}
+      - JWT_SECRET=${JWT_SECRET}
     depends_on:
       - db
     networks:
@@ -31,8 +31,8 @@ services:
     build: ./task-api
     environment:
       - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/taskdb
-      - SPRING_DATASOURCE_USERNAME=platformuser
-      - SPRING_DATASOURCE_PASSWORD=platformpass
+      - SPRING_DATASOURCE_USERNAME=${DB_USERNAME}
+      - SPRING_DATASOURCE_PASSWORD=${DB_PASSWORD}
     depends_on:
       - db
     networks:
@@ -42,8 +42,8 @@ services:
     build: ./restaurant-service
     environment:
       - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/restaurantdb
-      - SPRING_DATASOURCE_USERNAME=platformuser
-      - SPRING_DATASOURCE_PASSWORD=platformpass
+      - SPRING_DATASOURCE_USERNAME=${DB_USERNAME}
+      - SPRING_DATASOURCE_PASSWORD=${DB_PASSWORD}
     depends_on:
       - db
     networks:
@@ -53,8 +53,8 @@ services:
     build: ./guesthouse-service
     environment:
       - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/guesthousedb
-      - SPRING_DATASOURCE_USERNAME=platformuser
-      - SPRING_DATASOURCE_PASSWORD=platformpass
+      - SPRING_DATASOURCE_USERNAME=${DB_USERNAME}
+      - SPRING_DATASOURCE_PASSWORD=${DB_PASSWORD}
     depends_on:
       - db
     networks:
@@ -64,8 +64,8 @@ services:
     build: ./marketplace-service
     environment:
       - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/marketplacedb
-      - SPRING_DATASOURCE_USERNAME=platformuser
-      - SPRING_DATASOURCE_PASSWORD=platformpass
+      - SPRING_DATASOURCE_USERNAME=${DB_USERNAME}
+      - SPRING_DATASOURCE_PASSWORD=${DB_PASSWORD}
     depends_on:
       - db
     networks:
@@ -74,8 +74,8 @@ services:
   db:
     image: postgres:16-alpine
     environment:
-      - POSTGRES_USER=platformuser
-      - POSTGRES_PASSWORD=platformpass
+      - POSTGRES_USER=${DB_USERNAME}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
     volumes:
       - postgres-data:/var/lib/postgresql/data
     networks:
