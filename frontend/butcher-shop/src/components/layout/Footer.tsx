@@ -3,8 +3,8 @@ export default function Footer() {
     <footer className="footer">
       <div className="footer-inner">
         <div className="footer-section">
-          <h3>Fresh Cuts Butchery</h3>
-          <p>Quality meats, fair prices, served with pride since 2010.</p>
+          <h3>SC Socio Economic Growth Implementation Experts</h3>
+          <p>Cutting poverty, serving quality</p>
         </div>
         <div className="footer-section">
           <h3>Hours</h3>
@@ -14,12 +14,15 @@ export default function Footer() {
         </div>
         <div className="footer-section">
           <h3>Contact</h3>
-          <p>📞 043 123 4567</p>
-          <p>📍 42 Main Road, East London</p>
+          <p>📞 076 264 0842</p>
+          <p>📍 2 Viola Street, Michausdal, Nxuba, 5880</p>
         </div>
       </div>
       <div className="footer-bottom">
-        <p>&copy; {new Date().getFullYear()} Fresh Cuts Butchery. All rights reserved.</p>
+        <p>
+          &copy; {new Date().getFullYear()} SC Socio Economic Growth
+          Implementation. All rights reserved.
+        </p>
       </div>
     </footer>
   );

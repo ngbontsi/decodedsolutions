@@ -1,0 +1,8 @@
+{
+  "name": "decoded-solutions-platform",
+  "private": true,
+  "scripts": {
+    "deploy": "powershell -ExecutionPolicy Bypass -File deploy.ps1",
+    "deploy:wsl": "wsl -d Ubuntu -- bash -c \"cd '/mnt/c/Users/admin/Desktop/decoded solution platform/platform' && ./deploy.sh\""
+  }
+}

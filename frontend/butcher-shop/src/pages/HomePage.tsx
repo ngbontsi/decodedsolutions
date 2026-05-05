@@ -13,7 +13,8 @@ export default function HomePage() {
           <h1>
             Premium Quality
             <br />
-            <span className="accent">Fresh Cuts</span> Daily
+            <span className="accent">SC Socio Economic Growth</span>{" "}
+            Implementation and Mentoring Experts
           </h1>
           <p>
             From farm to your braai. Hand-selected cuts, traditional recipes,
