@@ -40,5 +40,17 @@ frontend/task_app/.flutter-plugins
 frontend/task_app/.flutter-plugins-dependencies
 frontend/task_app/.metadata
 
+# Dashboard
+frontend/decoded_dashboard/node_modules/
+frontend/decoded_dashboard/dist/
+
+# Butcher Shop
+frontend/butcher-shop/node_modules/
+frontend/butcher-shop/dist/
+
+# Guesthouse Client
+frontend/guesthouse-client/node_modules/
+frontend/guesthouse-client/dist/
+
 # Decoded solution platform (nested)
 decoded solution platform/
