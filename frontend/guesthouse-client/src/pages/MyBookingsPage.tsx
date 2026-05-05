@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { Calendar, MapPin, Bed, AlertCircle, XCircle } from "lucide-react";
+import { Calendar, Bed, AlertCircle, XCircle } from "lucide-react";
 import { useBooking } from "../context/BookingContext";
 
 export default function MyBookingsPage() {

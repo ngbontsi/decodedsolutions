@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { ShoppingBag, Heart } from "lucide-react";
 import { useShop } from "../context/ShopContext";
-import type { Category } from "../../types";
+import type { Category } from "../types";
 
 export default function ShopPage() {
   const [searchParams] = useSearchParams();

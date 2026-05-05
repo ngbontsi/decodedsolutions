@@ -1,11 +1,10 @@
 import { useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { Check, ShoppingBag } from "lucide-react";
 import { useShop } from "../context/ShopContext";
 
 export default function CheckoutPage() {
   const { cart, cartTotal, clearCart } = useShop();
-  const navigate = useNavigate();
   const [step, setStep] = useState(1);
   const [orderPlaced, setOrderPlaced] = useState(false);
 
