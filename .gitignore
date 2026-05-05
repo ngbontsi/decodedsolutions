@@ -1,0 +1,44 @@
+# Maven
+target/
+*.jar
+*.war
+*.ear
+
+# IDE
+.idea/
+*.iml
+.vscode/
+*.swp
+*.swo
+.project
+.classpath
+.settings/
+
+# Logs
+*.log
+logs/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Environment
+.env
+*.env.local
+
+# Docker
+*.dockerignore
+
+# Kubernetes (secrets)
+devops/k8s/**-secret.yaml
+
+# Flutter
+frontend/task_app/build/
+frontend/task_app/.dart_tool/
+frontend/task_app/pubspec.lock
+frontend/task_app/.flutter-plugins
+frontend/task_app/.flutter-plugins-dependencies
+frontend/task_app/.metadata
+
+# Decoded solution platform (nested)
+decoded solution platform/
