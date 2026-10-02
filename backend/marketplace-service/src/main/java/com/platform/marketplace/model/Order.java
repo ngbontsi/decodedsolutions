@@ -23,6 +23,9 @@ public class Order {
     @Column(nullable = false)
     private String userId;
 
+    @Column(name = "store_id")
+    private String storeId;
+
     private BigDecimal totalAmount;
 
     private String shippingAddress;
