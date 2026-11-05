@@ -2,7 +2,6 @@ package com.platform.restaurant.controller;
 
 import com.platform.restaurant.dto.MenuItemRequest;
 import com.platform.restaurant.dto.MenuItemResponse;
-import com.platform.restaurant.model.MenuItem;
 import com.platform.restaurant.service.MenuService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.ArraySchema;

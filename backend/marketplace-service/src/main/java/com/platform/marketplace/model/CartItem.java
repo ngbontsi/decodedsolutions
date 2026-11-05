@@ -37,6 +37,11 @@ public class CartItem {
         return id !=null && Objects.equals(cartItem.id,id);
     }
 
+    @Override
+    public int hashCode() {
+        return super.hashCode();
+    }
+
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();

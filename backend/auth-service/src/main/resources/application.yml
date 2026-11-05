@@ -22,5 +22,7 @@ spring:
         dialect: org.hibernate.dialect.PostgreSQLDialect
 
 jwt:
-  secret: ${JWT_SECRET:YourSuperSecretKeyForJWTTokenGenerationAndValidation2024!}
+  secret: ${JWT_SECRET}
   expiration: 86400000
+internal:
+  shared-secret: ${INTERNAL_SHARED_SECRET}

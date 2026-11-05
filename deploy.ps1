@@ -10,8 +10,7 @@ $apps = @(
     @{ Name = "guesthouse-client";  Path = "$PlatformRoot\frontend\guesthouse-client";    Dest = "guesthouse-client" },
     @{ Name = "dashboard";          Path = "$PlatformRoot\frontend\decoded_dashboard";    Dest = "dashboard" },
     @{ Name = "zozos-shop";         Path = "$PlatformRoot\frontend\zozos-shop";           Dest = "zozos-shop" },
-    @{ Name = "vuyolwethu";         Path = "$PlatformRoot\frontend\vuyolwethu";           Dest = "vuyolwethu" },
-    @{ Name = "portfolio";          Path = "$PlatformRoot\frontend\portfolio";            Dest = "freelance-work" }
+    @{ Name = "vuyolwethu";         Path = "$PlatformRoot\frontend\vuyolwethu";           Dest = "vuyolwethu" }
 )
 
 Write-Host "`n========== Deploying to GitHub Pages ==========" -ForegroundColor Cyan
@@ -23,8 +22,19 @@ foreach ($app in $apps) {
     Write-Host "`n  Building $($app.Name)..."
     Push-Location $app.Path
     try {
+        # Harden against gh-pages cache hazard (ensure clean cache)
+        $cacheDir = Join-Path $app.Path "node_modules\.cache\gh-pages"
+        if (Test-Path $cacheDir) {
+            Remove-Item -Recurse -Force $cacheDir -ErrorAction SilentlyContinue
+        }
+
         npx --yes vite build 2>&1 | Out-Null
         if ($LASTEXITCODE -ne 0) { throw "Build failed for $($app.Name)" }
+
+        # Clean cache again before deploy
+        if (Test-Path $cacheDir) {
+            Remove-Item -Recurse -Force $cacheDir -ErrorAction SilentlyContinue
+        }
 
         npx --yes gh-pages -d dist --dest $app.Dest 2>&1
         if ($LASTEXITCODE -ne 0) { throw "Deploy failed for $($app.Name)" }

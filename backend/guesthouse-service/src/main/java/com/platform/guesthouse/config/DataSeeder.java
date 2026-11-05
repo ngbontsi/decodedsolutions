@@ -14,6 +14,9 @@ import java.math.BigDecimal;
 @RequiredArgsConstructor
 public class DataSeeder implements CommandLineRunner {
 
+    public static final String STANDARD = "Standard";
+    public static final String SUITE = "Suite";
+    public static final String DELUXE = "Deluxe";
     private final GuesthouseRepository guesthouseRepository;
     private final RoomRepository roomRepository;
 
@@ -29,16 +32,16 @@ public class DataSeeder implements CommandLineRunner {
                 .address("12 Beach Road, Empolweni").phone("043 123 4567")
                 .imageUrl("🌊").amenities("Ocean View, Beach Access, Restaurant").build());
         roomRepository.save(Room.builder().guesthouseId(oceanView.getId()).ownerId(adminId)
-                .roomNumber("101").type("Suite").pricePerNight(BigDecimal.valueOf(2500))
+                .roomNumber("101").type(SUITE).pricePerNight(BigDecimal.valueOf(2500))
                 .capacity(2).amenities("King Bed,Ocean Balcony,Mini Bar,Bathtub").build());
         roomRepository.save(Room.builder().guesthouseId(oceanView.getId()).ownerId(adminId)
-                .roomNumber("102").type("Deluxe").pricePerNight(BigDecimal.valueOf(1800))
+                .roomNumber("102").type(DELUXE).pricePerNight(BigDecimal.valueOf(1800))
                 .capacity(2).amenities("Queen Bed,Sea View,Work Desk").build());
         roomRepository.save(Room.builder().guesthouseId(oceanView.getId()).ownerId(adminId)
                 .roomNumber("103").type("Family").pricePerNight(BigDecimal.valueOf(2200))
                 .capacity(4).amenities("2 Double Beds,Balcony,TV,Fridge").available(false).build());
         roomRepository.save(Room.builder().guesthouseId(oceanView.getId()).ownerId(adminId)
-                .roomNumber("104").type("Standard").pricePerNight(BigDecimal.valueOf(1200))
+                .roomNumber("104").type(STANDARD).pricePerNight(BigDecimal.valueOf(1200))
                 .capacity(2).amenities("Double Bed,Garden View").build());
 
         Guesthouse mountainRetreat = guesthouseRepository.save(Guesthouse.builder()
@@ -50,10 +53,10 @@ public class DataSeeder implements CommandLineRunner {
                 .roomNumber("201").type("Chalet").pricePerNight(BigDecimal.valueOf(3500))
                 .capacity(4).amenities("2 Bedrooms,Fireplace,Kitchen,Mountain View").build());
         roomRepository.save(Room.builder().guesthouseId(mountainRetreat.getId()).ownerId(adminId)
-                .roomNumber("202").type("Deluxe").pricePerNight(BigDecimal.valueOf(1800))
+                .roomNumber("202").type(DELUXE).pricePerNight(BigDecimal.valueOf(1800))
                 .capacity(2).amenities("King Bed,Forest View,Balcony").build());
         roomRepository.save(Room.builder().guesthouseId(mountainRetreat.getId()).ownerId(adminId)
-                .roomNumber("203").type("Standard").pricePerNight(BigDecimal.valueOf(1400))
+                .roomNumber("203").type(STANDARD).pricePerNight(BigDecimal.valueOf(1400))
                 .capacity(2).amenities("Queen Bed,Valley View,Tea Station").build());
 
         Guesthouse cityStay = guesthouseRepository.save(Guesthouse.builder()
@@ -62,13 +65,13 @@ public class DataSeeder implements CommandLineRunner {
                 .address("88 Main Street, Downtown").phone("043 345 6789")
                 .imageUrl("🏙️").amenities("City Centre, Business, Shopping").build());
         roomRepository.save(Room.builder().guesthouseId(cityStay.getId()).ownerId(adminId)
-                .roomNumber("301").type("Suite").pricePerNight(BigDecimal.valueOf(2000))
+                .roomNumber("301").type(SUITE).pricePerNight(BigDecimal.valueOf(2000))
                 .capacity(2).amenities("King Bed,City View,Lounge,Mini Bar").build());
         roomRepository.save(Room.builder().guesthouseId(cityStay.getId()).ownerId(adminId)
-                .roomNumber("302").type("Standard").pricePerNight(BigDecimal.valueOf(950))
+                .roomNumber("302").type(STANDARD).pricePerNight(BigDecimal.valueOf(950))
                 .capacity(1).amenities("Single Bed,Work Desk,WiFi").build());
         roomRepository.save(Room.builder().guesthouseId(cityStay.getId()).ownerId(adminId)
-                .roomNumber("303").type("Standard").pricePerNight(BigDecimal.valueOf(1100))
+                .roomNumber("303").type(STANDARD).pricePerNight(BigDecimal.valueOf(1100))
                 .capacity(2).amenities("2 Single Beds,City View").build());
         roomRepository.save(Room.builder().guesthouseId(cityStay.getId()).ownerId(adminId)
                 .roomNumber("304").type("Family").pricePerNight(BigDecimal.valueOf(1600))
@@ -95,13 +98,13 @@ public class DataSeeder implements CommandLineRunner {
                 .address("5 Harbour Road, Waterfront").phone("043 567 8901")
                 .imageUrl("⛵").amenities("Boutique, Waterfront, Fine Dining").build());
         roomRepository.save(Room.builder().guesthouseId(harbour.getId()).ownerId(adminId)
-                .roomNumber("501").type("Suite").pricePerNight(BigDecimal.valueOf(4200))
+                .roomNumber("501").type(SUITE).pricePerNight(BigDecimal.valueOf(4200))
                 .capacity(2).amenities("King Bed,Harbour View,Jacuzzi,Mini Bar").build());
         roomRepository.save(Room.builder().guesthouseId(harbour.getId()).ownerId(adminId)
-                .roomNumber("502").type("Deluxe").pricePerNight(BigDecimal.valueOf(2800))
+                .roomNumber("502").type(DELUXE).pricePerNight(BigDecimal.valueOf(2800))
                 .capacity(2).amenities("Queen Bed,Marina View,Balcony").build());
         roomRepository.save(Room.builder().guesthouseId(harbour.getId()).ownerId(adminId)
-                .roomNumber("503").type("Standard").pricePerNight(BigDecimal.valueOf(2200))
+                .roomNumber("503").type(STANDARD).pricePerNight(BigDecimal.valueOf(2200))
                 .capacity(2).amenities("Double Bed,Garden Access,Patio").build());
     }
 }

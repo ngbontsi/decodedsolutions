@@ -1,6 +1,5 @@
 package com.platform.restaurant.controller;
 
-import com.platform.restaurant.dto.MenuItemResponse;
 import com.platform.restaurant.dto.RestaurantRequest;
 import com.platform.restaurant.dto.RestaurantResponse;
 import com.platform.restaurant.service.RestaurantService;

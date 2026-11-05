@@ -62,6 +62,11 @@ public class Product {
         return id!=null&& Objects.equals(product.id,id);
     }
 
+    @Override
+    public int hashCode() {
+        return super.hashCode();
+    }
+
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();

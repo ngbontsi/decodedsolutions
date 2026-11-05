@@ -6,7 +6,9 @@
 - All React apps use `HashRouter` for GitHub Pages compatibility
 - npm/WSL via Ubuntu for builds; Windows PowerShell for file operations
 - Client demos must remain standalone apps, not dashboard modules
-- Workflow: `develop` → `npm run build` → `.\deploy.ps1` (never commit dist/)
+- Workflow: `develop` → `npm run build` → `./deploy.ps1` (never commit dist/)
+- Sprint board sync: keep `business/sprints/SPRINTS.md` and the live GitHub Projects board aligned. Security and release-readiness work have equal priority to feature work.
+- Never commit secrets, PATs, or credentials to source control. Rotate any exposed tokens immediately.
 
 ## Branching Strategy (enforced via GitHub branch protection)
 Both `main` and `develop` require pull requests — no direct pushes allowed.

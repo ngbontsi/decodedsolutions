@@ -4,11 +4,13 @@ services:
     ports:
       - "8080:8080"
     environment:
-      - JWT_SECRET=${JWT_SECRET:-change-me-to-a-secure-random-string-at-least-32-chars}
+      - JWT_SECRET=${JWT_SECRET:?JWT_SECRET must be set}
       - AUTH_SERVICE_URI=http://auth-service:8081
       - RESTAURANT_SERVICE_URI=http://restaurant-service:8082
       - GUESTHOUSE_SERVICE_URI=http://guesthouse-service:8083
       - MARKETPLACE_SERVICE_URI=http://marketplace-service:8084
+      - INTERNAL_SHARED_SECRET=${INTERNAL_SHARED_SECRET:?INTERNAL_SHARED_SECRET must be set}
+
     depends_on:
       - redis
     networks:
@@ -16,13 +18,12 @@ services:
 
   auth-service:
     build: ../backend/auth-service
-    ports:
-      - "8081:8081"
     environment:
       - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/authdb
       - SPRING_DATASOURCE_USERNAME=${DB_USERNAME:-platformuser}
       - SPRING_DATASOURCE_PASSWORD=${DB_PASSWORD:-platformpass}
-      - JWT_SECRET=${JWT_SECRET:-change-me-to-a-secure-random-string-at-least-32-chars}
+      - JWT_SECRET=${JWT_SECRET:?JWT_SECRET must be set}
+      - INTERNAL_SHARED_SECRET=${INTERNAL_SHARED_SECRET:?INTERNAL_SHARED_SECRET must be set}
     depends_on:
       - db
     networks:
@@ -30,12 +31,13 @@ services:
 
   restaurant-service:
     build: ../backend/restaurant-service
-    ports:
-      - "8082:8082"
     environment:
       - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/restaurantdb
       - SPRING_DATASOURCE_USERNAME=${DB_USERNAME:-platformuser}
       - SPRING_DATASOURCE_PASSWORD=${DB_PASSWORD:-platformpass}
+      - INTERNAL_SHARED_SECRET=${INTERNAL_SHARED_SECRET:?INTERNAL_SHARED_SECRET must be set}
+
+
     depends_on:
       - db
     networks:
@@ -43,12 +45,11 @@ services:
 
   guesthouse-service:
     build: ../backend/guesthouse-service
-    ports:
-      - "8083:8083"
     environment:
       - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/guesthousedb
       - SPRING_DATASOURCE_USERNAME=${DB_USERNAME:-platformuser}
       - SPRING_DATASOURCE_PASSWORD=${DB_PASSWORD:-platformpass}
+      - INTERNAL_SHARED_SECRET=${INTERNAL_SHARED_SECRET:?INTERNAL_SHARED_SECRET must be set}
     depends_on:
       - db
     networks:
@@ -56,12 +57,12 @@ services:
 
   marketplace-service:
     build: ../backend/marketplace-service
-    ports:
-      - "8084:8084"
     environment:
       - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/marketplacedb
       - SPRING_DATASOURCE_USERNAME=${DB_USERNAME:-platformuser}
       - SPRING_DATASOURCE_PASSWORD=${DB_PASSWORD:-platformpass}
+      - INTERNAL_SHARED_SECRET=${INTERNAL_SHARED_SECRET:?INTERNAL_SHARED_SECRET must be set}
+
     depends_on:
       - db
     networks:
@@ -69,8 +70,6 @@ services:
 
   db:
     image: postgres:16-alpine
-    ports:
-      - "5433:5432"
     environment:
       - POSTGRES_USER=${DB_USERNAME:-platformuser}
       - POSTGRES_PASSWORD=${DB_PASSWORD:-platformpass}
@@ -82,8 +81,6 @@ services:
 
   redis:
     image: redis:7-alpine
-    ports:
-      - "6379:6379"
     networks:
       - platform-network
 

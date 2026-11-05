@@ -35,7 +35,12 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
             "/guesthouses",
             "/rooms"
     );
-
+ private  static final String HEADER_USER_ID = "X-User-Id";
+ private static final  String HEADER_USER_ROLE ="X-User-Role";
+ private static  final String HEADER_USER_EMAIL ="X-User-Email";
+ private static final String HEADER_INTERNAL ="X-Internal-Token";
+ @Value("${internal.shared-secret:}")
+ private String internalSharedSecret;
     private static final String LOGOUT_PATH = "/auth/logout";
 
     @Value("${jwt.secret}")
@@ -49,21 +54,29 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
 
     @Override
     public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
-        ServerHttpRequest request = exchange.getRequest();
+        ServerHttpRequest request = exchange.getRequest().mutate()
+                .headers(h -> {
+                    h.remove(HEADER_USER_ID);
+                    h.remove(HEADER_USER_ROLE);
+                    h.remove(HEADER_USER_EMAIL);
+                    h.remove(HEADER_INTERNAL);
+                })
+                .header(HEADER_INTERNAL,internalSharedSecret).build();
+        ServerWebExchange cleanExchange = exchange.mutate().request(request).build();
         String path = request.getURI().getPath();
 
         if (isPublicPath(path)) {
-            return chain.filter(exchange);
+            return chain.filter(cleanExchange);
         }
 
         if (isPublicGetPath(path, request.getMethod().name())) {
-            return chain.filter(exchange);
+            return chain.filter(cleanExchange);
         }
 
         String authHeader = request.getHeaders().getFirst("Authorization");
 
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-            return unauthorized(exchange.getResponse());
+            return unauthorized(cleanExchange.getResponse());
         }
 
         String token = authHeader.substring(7);
@@ -72,29 +85,29 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
             Claims claims = validateToken(token);
 
             if (path.equals(LOGOUT_PATH)) {
-                return handleLogout(token, claims, exchange);
+                return handleLogout(token, claims, cleanExchange);
             }
 
             return blacklistService.isBlacklisted(token)
                     .flatMap(blacklisted -> {
-                        if (blacklisted) {
-                            return unauthorized(exchange.getResponse());
-                        }
+                        if (Boolean.TRUE.equals(blacklisted))
+                            return unauthorized(cleanExchange.getResponse());
+
                         String userId = claims.getSubject();
                         String role = (String) claims.get("role");
                         String email = (String) claims.get("email");
 
                         ServerHttpRequest modifiedRequest = request.mutate()
-                                .header("X-User-Id", userId)
-                                .header("X-User-Role", role != null ? role : "USER")
-                                .header("X-User-Email", email != null ? email : "")
+                                .header(HEADER_USER_ID, userId)
+                                .header(HEADER_USER_ROLE, role != null ? role : "USER")
+                                .header(HEADER_USER_EMAIL, email != null ? email : "")
                                 .build();
 
-                        return chain.filter(exchange.mutate().request(modifiedRequest).build());
+                        return chain.filter(cleanExchange.mutate().request(modifiedRequest).build());
                     });
 
         } catch (Exception e) {
-            return unauthorized(exchange.getResponse());
+            return unauthorized(cleanExchange.getResponse());
         }
     }
 

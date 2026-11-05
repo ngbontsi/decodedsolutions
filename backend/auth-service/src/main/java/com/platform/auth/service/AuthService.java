@@ -24,6 +24,7 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class AuthService {
 
+    public static final String USER_NOT_FOUND = "User not found";
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final RoleRepository roleRepository;
@@ -109,7 +110,7 @@ public class AuthService {
 
     public UserResponse updateUserRole(String id, String newRoleName, String actorId, String actorEmail) {
         User user = userRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new RuntimeException(USER_NOT_FOUND));
         if (newRoleName == null) {
             throw new RuntimeException("Role is required");
         }
@@ -127,7 +128,7 @@ public class AuthService {
 
     public UserResponse toggleUserEnabled(String id, boolean enabled, String actorId, String actorEmail) {
         User user = userRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new RuntimeException(USER_NOT_FOUND));
         user.setEnabled(enabled);
         UserResponse res = toUserResponse(userRepository.save(user));
 
@@ -139,7 +140,7 @@ public class AuthService {
 
     public void deleteUser(String id, String actorId, String actorEmail) {
         User user = userRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new RuntimeException(USER_NOT_FOUND));
         auditService.log(actorId, actorEmail, "DELETE_USER",
                 id, "USER", "Deleted user " + user.getEmail());
         userRepository.delete(user);

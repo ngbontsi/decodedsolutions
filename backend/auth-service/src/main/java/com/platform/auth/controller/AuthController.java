@@ -4,6 +4,7 @@ import com.platform.auth.dto.AuthResponse;
 import com.platform.auth.dto.LoginRequest;
 import com.platform.auth.dto.RegisterRequest;
 import com.platform.auth.dto.UserResponse;
+import com.platform.auth.repository.UserRepository;
 import com.platform.auth.service.AuthService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -24,7 +25,9 @@ import java.util.Map;
 @Tag(name = "Authentication", description = "Auth and user management endpoints")
 public class AuthController {
 
+    public static final String ADMIN = "ADMIN";
     private final AuthService authService;
+    private final UserRepository userRepository;
 
     @PostMapping("/register")
     @Operation(summary = "Register a new user", description = "Creates a new user account and returns a JWT token")
@@ -68,10 +71,9 @@ public class AuthController {
     public ResponseEntity<UserResponse> updateUserRole(
             @PathVariable String id,
             @RequestBody Map<String, String> body,
-            @RequestHeader("X-User-Role") String callerRole,
             @RequestHeader("X-User-Id") String callerId,
             @RequestHeader("X-User-Email") String callerEmail) {
-        if (!"ADMIN".equals(callerRole)) {
+        if (!isAdmin(callerId)) {
             return ResponseEntity.status(403).build();
         }
         return ResponseEntity.ok(authService.updateUserRole(id, body.get("role"), callerId, callerEmail));
@@ -82,10 +84,9 @@ public class AuthController {
     public ResponseEntity<UserResponse> toggleUserEnabled(
             @PathVariable String id,
             @RequestBody Map<String, Boolean> body,
-            @RequestHeader("X-User-Role") String callerRole,
             @RequestHeader("X-User-Id") String callerId,
             @RequestHeader("X-User-Email") String callerEmail) {
-        if (!"ADMIN".equals(callerRole)) {
+        if (!isAdmin(callerId)) {
             return ResponseEntity.status(403).build();
         }
         return ResponseEntity.ok(authService.toggleUserEnabled(id, body.get("enabled"), callerId, callerEmail));
@@ -99,13 +100,19 @@ public class AuthController {
     })
     public ResponseEntity<Void> deleteUser(
             @PathVariable String id,
-            @RequestHeader("X-User-Role") String callerRole,
             @RequestHeader("X-User-Id") String callerId,
             @RequestHeader("X-User-Email") String callerEmail) {
-        if (!"ADMIN".equals(callerRole)) {
+        if (!isAdmin(callerId)) {
             return ResponseEntity.status(403).build();
         }
         authService.deleteUser(id, callerId, callerEmail);
         return ResponseEntity.noContent().build();
+    }
+
+    private boolean isAdmin(String callerId){
+        if(callerId == null)return  false;
+        return userRepository.findById(callerId)
+                .map(user -> user.getRole() != null && ADMIN.equalsIgnoreCase(user.getRole().getName()))
+                .orElse(false);
     }
 }
