@@ -176,9 +176,4 @@ public class PersonService {
         }
         return edges;
     }
-
-    @Transactional
-    public UUID contributorIdOrSystem(UUID requested) {
-        return requested != null ? requested : Uuid7.generate();
-    }
 }
