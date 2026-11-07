@@ -13,7 +13,7 @@ if (-not $env:JAVA_HOME) {
     }
 }
 
-& "$PSScriptRoot\mvnw.cmd" -o -B -q package -DskipTests
+& "$PSScriptRoot\mvnw.cmd" -B -q package -DskipTests
 if ($LASTEXITCODE -ne 0) { throw "Build failed." }
 
 docker compose -f "$PSScriptRoot\compose.yaml" up -d familytree-db
