@@ -12,7 +12,13 @@ care relationships, heritage events, and the claims plus evidence that justify t
 .\run.ps1
 ```
 
-That builds the jar, starts Postgres with Docker, and serves on port 8085.
+That builds the jar, starts Postgres with Docker, and serves on port 8085 (foreground).
+
+To start the database, API and UI together in the background:
+
+```powershell
+.\start-local.ps1
+```
 
 - API base: `http://localhost:8085/api/v1`
 - Swagger UI: `http://localhost:8085/swagger-ui.html`

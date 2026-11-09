@@ -6,7 +6,14 @@ renders from that snapshot.
 
 ## Run it
 
-The API must be on `http://localhost:8085` first.
+The API must be running first. One command starts the database, API and UI together:
+
+```powershell
+cd backend/family-tree-service
+.\start-local.ps1
+```
+
+Or by hand:
 
 ```powershell
 cd frontend/family-tree
