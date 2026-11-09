@@ -1,0 +1,56 @@
+# Databases only. The service runs from the jar on the host for local work:
+#   .\run.ps1
+# Use `docker compose --profile full up -d --build` when the JDK base image is available.
+
+services:
+  familytree-db:
+    image: postgres:16-alpine
+    container_name: familytree-db
+    environment:
+      POSTGRES_DB: familytree
+      POSTGRES_USER: familytree
+      POSTGRES_PASSWORD: familytree
+    ports:
+      - "5432:5432"
+    volumes:
+      - familytree-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U familytree -d familytree"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  familytree-db-test:
+    image: postgres:16-alpine
+    container_name: familytree-db-test
+    environment:
+      POSTGRES_DB: familytree_test
+      POSTGRES_USER: familytree
+      POSTGRES_PASSWORD: familytree
+    ports:
+      - "5433:5432"
+    tmpfs:
+      - /var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U familytree -d familytree_test"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  familytree-service:
+    profiles: ["full"]
+    build: .
+    container_name: familytree-service
+    depends_on:
+      familytree-db:
+        condition: service_healthy
+    environment:
+      DB_URL: jdbc:postgresql://familytree-db:5432/familytree
+      DB_USERNAME: familytree
+      DB_PASSWORD: familytree
+      SERVER_PORT: 8085
+    ports:
+      - "8085:8085"
+
+volumes:
+  familytree-data:

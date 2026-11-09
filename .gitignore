@@ -52,6 +52,10 @@ frontend/zozos-shop/dist/
 frontend/vuyolwethu/node_modules/
 frontend/vuyolwethu/dist/
 
+# Family Tree
+frontend/family-tree/node_modules/
+frontend/family-tree/dist/
+
 # Portfolio
 frontend/portfolio/node_modules/
 frontend/portfolio/dist/
