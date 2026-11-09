@@ -61,6 +61,11 @@ public class ParentageController {
         };
     }
 
+    @GetMapping
+    public List<Parentage> all() {
+        return parentages.all();
+    }
+
     @GetMapping("/child/{childId}")
     public List<Parentage> forChild(@PathVariable UUID childId) {
         return parentages.forChild(childId);

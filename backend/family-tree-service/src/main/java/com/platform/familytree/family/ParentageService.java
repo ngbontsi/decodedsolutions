@@ -117,6 +117,12 @@ public class ParentageService {
         return parentages.findByChildIdOrderByCreatedAtAsc(childId);
     }
 
+    /** The whole graph, so a client can draw a tree without one call per person. */
+    @Transactional(readOnly = true)
+    public List<Parentage> all() {
+        return parentages.findAll();
+    }
+
     private Person requirePerson(UUID id) {
         return persons.findById(id).orElseThrow(() -> DomainException.notFound("Person", id));
     }
