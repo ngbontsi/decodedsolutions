@@ -1,7 +1,15 @@
 package com.platform.familytree.heritage;
 
-import com.platform.familytree.identity.ArchiveService;
-import com.platform.familytree.identity.PersonRepository;
+import com.platform.familytree.heritage.model.HistoricalEvent;
+import com.platform.familytree.heritage.model.Location;
+import com.platform.familytree.heritage.model.Organisation;
+import com.platform.familytree.heritage.model.OrganisationMembership;
+import com.platform.familytree.heritage.repository.HistoricalEventRepository;
+import com.platform.familytree.heritage.repository.LocationRepository;
+import com.platform.familytree.heritage.repository.OrganisationMembershipRepository;
+import com.platform.familytree.heritage.repository.OrganisationRepository;
+import com.platform.familytree.identity.service.ArchiveService;
+import com.platform.familytree.identity.repository.PersonRepository;
 import com.platform.familytree.shared.audit.AuditLog;
 import com.platform.familytree.shared.audit.AuditWriter;
 import com.platform.familytree.shared.error.DomainException;

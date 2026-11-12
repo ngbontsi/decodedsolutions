@@ -1,5 +1,13 @@
 package com.platform.familytree.heritage;
 
+import com.platform.familytree.heritage.dto.AddMembershipRequest;
+import com.platform.familytree.heritage.dto.CreateEventRequest;
+import com.platform.familytree.heritage.dto.CreateLocationRequest;
+import com.platform.familytree.heritage.dto.CreateOrganisationRequest;
+import com.platform.familytree.heritage.model.HistoricalEvent;
+import com.platform.familytree.heritage.model.Location;
+import com.platform.familytree.heritage.model.Organisation;
+import com.platform.familytree.heritage.model.OrganisationMembership;
 import com.platform.familytree.shared.web.ActorResolver;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -10,7 +18,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 
@@ -24,32 +31,6 @@ public class HeritageController {
     public HeritageController(HeritageService heritage, ActorResolver actors) {
         this.heritage = heritage;
         this.actors = actors;
-    }
-
-    public record CreateLocationRequest(String name, Location.Type locationType,
-                                        UUID parentLocationId) {
-    }
-
-    public record CreateEventRequest(String title,
-                                     String description,
-                                     LocalDate eventDate,
-                                     HistoricalEvent.Precision datePrecision,
-                                     UUID locationId,
-                                     HistoricalEvent.Type eventType,
-                                     UUID actorId) {
-    }
-
-    public record CreateOrganisationRequest(String name,
-                                            Organisation.Type organisationType,
-                                            LocalDate foundedDate,
-                                            String description,
-                                            UUID actorId) {
-    }
-
-    public record AddMembershipRequest(UUID personId,
-                                       String role,
-                                       LocalDate startDate,
-                                       UUID actorId) {
     }
 
     @PostMapping("/locations")

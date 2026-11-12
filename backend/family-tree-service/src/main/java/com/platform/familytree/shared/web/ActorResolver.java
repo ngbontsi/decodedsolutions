@@ -1,6 +1,6 @@
 package com.platform.familytree.shared.web;
 
-import com.platform.familytree.community.ContributorService;
+import com.platform.familytree.community.service.ContributorService;
 import org.springframework.stereotype.Component;
 
 import java.util.UUID;
