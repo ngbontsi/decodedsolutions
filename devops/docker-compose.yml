@@ -67,6 +67,19 @@ services:
     networks:
       - platform-network
 
+  familytree-service:
+    build: ../backend/family-tree-service
+    ports:
+      - "8085:8085"
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/familytreedb
+      - SPRING_DATASOURCE_USERNAME=${DB_USERNAME:-platformuser}
+      - SPRING_DATASOURCE_PASSWORD=${DB_PASSWORD:-platformpass}
+    depends_on:
+        - db
+    networks:
+        - platform-network
+
   db:
     image: postgres:16-alpine
     ports:

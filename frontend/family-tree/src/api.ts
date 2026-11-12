@@ -22,6 +22,16 @@ import type {
 
 const BASE = (import.meta.env.VITE_API_BASE as string | undefined) ?? '/api/v1'
 
+const PASSCODE_KEY = 'familytree.passcode'
+
+export function getPasscode(): string {
+  return window.localStorage.getItem(PASSCODE_KEY) ?? ''
+}
+
+export function rememberPasscode(passcode: string): void {
+  window.localStorage.setItem(PASSCODE_KEY, passcode)
+}
+
 export class ApiError extends Error {
   readonly status: number
   readonly code: string | null
@@ -34,12 +44,14 @@ export class ApiError extends Error {
 }
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
+  const passcode = getPasscode()
   let response: Response
   try {
     response = await fetch(`${BASE}${path}`, {
       ...init,
       headers: {
         'Content-Type': 'application/json',
+        ...(passcode ? { 'X-Beta-Passcode': passcode } : {}),
         ...(init?.headers ?? {}),
       },
     })
