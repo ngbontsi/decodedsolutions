@@ -30,9 +30,12 @@ spring:
       write-dates-as-timestamps: false
 
 server:
-  port: ${SERVER_PORT:8085}
+  port: ${PORT:${SERVER_PORT:8085}}
   error:
     include-message: always
+
+beta:
+  passcode: ${BETA_PASSCODE:}
 
 management:
   endpoints:
