@@ -23,8 +23,6 @@ public class ContributorController {
         this.contributors = contributors;
     }
 
-
-
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public Contributor create(@RequestBody CreateContributorRequest request) {

@@ -19,13 +19,13 @@ variable "frontend_apps" {
   type        = map(string)
   default = {
     # Format: short_service_name = "exact/folder/path"
-    butcher = "frontend/butcher-shop"
-    family = "frontend/family-tree"
-    client = "frontend/guesthouse-client"
-    admin = "frontend/decoded_dashboard"
-    zozos = "frontend/zozos-shop"
+    butcher   = "frontend/butcher-shop"
+    family    = "frontend/family-tree"
+    client    = "frontend/guesthouse-client"
+    admin     = "frontend/decoded_dashboard"
+    zozos     = "frontend/zozos-shop"
     portfolio = "frontend/portfolio"
-    vuyo = "frontend/vuyolwethu"
+    vuyo      = "frontend/vuyolwethu"
 
   }
 }

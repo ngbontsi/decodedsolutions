@@ -1,8 +1,35 @@
 # 1. Create a Neon Postgres Project & Database for this stage
 resource "neon_project" "platform_db" {
-  name                      = "platform-${var.stage_name}"
-  region_id                 = "aws-eu-central-1" # Closest AWS region to South Africa for Neon
-  pg_version                = 16
+  name       = "platform-${var.stage_name}"
+  region_id  = "aws-eu-central-1" # Closest AWS region to South Africa for Neon
+  pg_version = 16
+}
+
+locals {
+  app_databases = {
+    auth        = "authdb"
+    restaurant  = "restaurantdb"
+    guesthouse  = "guesthousedb"
+    marketplace = "marketplacedb"
+    familytree  = "familytreedb"
+  }
+}
+
+resource "neon_role" "app" {
+  for_each = local.app_databases
+
+  project_id = neon_project.platform_db.id
+  branch_id  = neon_project.platform_db.default_branch_id
+  name       = "${each.key}_app"
+}
+
+resource "neon_database" "app" {
+  for_each = local.app_databases
+
+  project_id = neon_project.platform_db.id
+  branch_id  = neon_project.platform_db.default_branch_id
+  name       = each.value
+  owner_name = neon_role.app[each.key].name
 }
 
 # 2. Deploy Spring Boot Backend from the 'Backend' folder
@@ -13,10 +40,10 @@ resource "render_web_service" "spring_backend" {
 
   runtime_source = {
     native_runtime = {
-      repo_url   = var.github_repo_url
-      branch     = var.git_branch
-      root_dir   = "Backend" # Tells Render to only watch and build the Backend folder
-      runtime    = "docker"
+      repo_url = var.github_repo_url
+      branch   = var.git_branch
+      root_dir = "Backend/" # Tells Render to only watch and build the Backend folder
+      runtime  = "docker"
     }
   }
 
@@ -31,7 +58,7 @@ resource "render_web_service" "spring_backend" {
 
 # 3. Deploy React Frontend App 1 (Free Static Site on Render)
 resource "render_static_site" "react_portal" {
-  name   = "portal-ui-${var.stage_name}"
+  name = "portal-ui-${var.stage_name}"
 
   repo_url      = var.github_repo_url
   branch        = var.git_branch
