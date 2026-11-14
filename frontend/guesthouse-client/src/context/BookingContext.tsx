@@ -164,8 +164,11 @@ export function BookingProvider({ children }: { children: ReactNode }) {
     } catch { /* ignore */ }
   };
 
-  const cancelBooking = async (_bookingId: string) => {
-    // Backend doesn't have a cancel endpoint — skip for now
+  const cancelBooking = async (bookingId: string) => {
+    try {
+      await api.patch(`/api/guesthouse/reservations/${bookingId}/cancel`);
+      await fetchBookings();
+    } catch { /* ignore */ }
   };
 
   return (

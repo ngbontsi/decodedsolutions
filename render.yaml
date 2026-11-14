@@ -41,6 +41,20 @@ services:
         sync: false
 
   - type: web
+    name: family-tree
+    runtime: docker
+    plan: free
+    rootDir: backend/family-tree-service
+    autoDeploy: false
+    envVars:
+      - key: DATASOURCE_URL
+        value: jdbc:postgresql://ep-spring-violet-zaqo2m73.c-2.eu-west-2.aws.neon.tech/familytreedb?sslmode=require
+      - key: DB_USERNAME
+        value: neondb_owner
+      - key: DB_PASSWORD
+        sync: false
+
+  - type: web
     name: decoded-guesthouse
     runtime: docker
     rootDir: backend/guesthouse-service

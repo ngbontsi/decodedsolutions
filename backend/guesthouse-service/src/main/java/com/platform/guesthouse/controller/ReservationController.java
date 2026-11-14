@@ -66,4 +66,22 @@ public class ReservationController {
             @RequestHeader(value = "X-User-Role", required = false) String userRole) {
         return ResponseEntity.ok(reservationService.getById(id, userId, userRole));
     }
+
+    @PatchMapping("/{id}/cancel")
+    @Operation(summary = "Cancel a reservation", description = "Cancels an existing reservation by setting status to CANCELLED")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Reservation cancelled successfully",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ReservationResponse.class))),
+            @ApiResponse(responseCode = "404", description = "Reservation not found",
+                    content = @Content),
+            @ApiResponse(responseCode = "409", description = "Reservation already cancelled",
+                    content = @Content)
+    })
+    public ResponseEntity<ReservationResponse> cancel(
+            @PathVariable String id,
+            @RequestHeader("X-User-Id") String userId,
+            @RequestHeader(value = "X-User-Role", required = false) String userRole) {
+        return ResponseEntity.ok(reservationService.cancel(id, userId, userRole));
+    }
 }

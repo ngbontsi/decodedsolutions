@@ -22,6 +22,9 @@ public class Category {
     @Column(nullable = false)
     private String name;
 
+    @Column(name = "business_id")
+    private String businessId;
+
     private String description;
 
     private String imageUrl;

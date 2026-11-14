@@ -50,6 +50,19 @@ public class ReservationService {
         return toResponse(reservation);
     }
 
+    public ReservationResponse cancel(String id, String userId, String userRole) {
+        Reservation reservation = reservationRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Reservation not found"));
+        if (!isAdmin(userRole) && !userId.equals(reservation.getUserId())) {
+            throw new ResourceNotFoundException("Reservation not found");
+        }
+        if (reservation.getStatus() == com.platform.guesthouse.model.ReservationStatus.CANCELLED) {
+            throw new IllegalStateException("Reservation is already cancelled");
+        }
+        reservation.setStatus(com.platform.guesthouse.model.ReservationStatus.CANCELLED);
+        return toResponse(reservationRepository.save(reservation));
+    }
+
     private boolean isAdmin(String userRole) {
         return "ADMIN".equals(userRole);
     }

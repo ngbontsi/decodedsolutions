@@ -22,6 +22,9 @@ public class Cart {
     @Column(nullable = false)
     private String userId;
 
+    @Column(name = "store_id")
+    private String storeId;
+
     private LocalDateTime createdAt;
 
     private LocalDateTime updatedAt;

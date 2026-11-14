@@ -1,9 +1,18 @@
+import { useState } from "react";
 import { Link } from "react-router-dom";
-import { Calendar, Bed, AlertCircle, XCircle } from "lucide-react";
+import { Calendar, Bed, AlertCircle, XCircle, Loader2 } from "lucide-react";
 import { useBooking } from "../context/BookingContext";
 
 export default function MyBookingsPage() {
-  const { bookings } = useBooking();
+  const { bookings, cancelBooking } = useBooking();
+  const [cancellingId, setCancellingId] = useState<string | null>(null);
+
+  const handleCancel = async (id: string) => {
+    if (!window.confirm("Are you sure you want to cancel this booking?")) return;
+    setCancellingId(id);
+    await cancelBooking(id);
+    setCancellingId(null);
+  };
 
   if (bookings.length === 0) {
     return (
@@ -76,6 +85,21 @@ export default function MyBookingsPage() {
                 </span>
               </div>
             </div>
+            {(booking.status === "confirmed" || booking.status === "pending") && (
+              <div className="booking-card-actions">
+                <button
+                  className="btn btn-outline btn-danger"
+                  disabled={cancellingId === booking.id}
+                  onClick={() => handleCancel(booking.id)}
+                >
+                  {cancellingId === booking.id ? (
+                    <><Loader2 size={14} className="spin" /> Cancelling...</>
+                  ) : (
+                    <><XCircle size={14} /> Cancel Booking</>
+                  )}
+                </button>
+              </div>
+            )}
           </div>
         ))}
       </div>

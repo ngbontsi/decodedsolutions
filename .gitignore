@@ -1,3 +1,18 @@
+# Terraform
+**/.terraform/*
+*.tfstate
+*.tfstate.*
+*.tfvars
+*.tfvars.json
+!*.tfvars.example
+!*.tfvars.json.example
+crash.log
+crash.*.log
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
 # Maven
 target/
 *.jar
@@ -28,6 +43,7 @@ Thumbs.db
 
 # Docker
 *.dockerignore
+!/.dockerignore
 
 # Kubernetes (secrets)
 devops/k8s/**-secret.yaml
@@ -52,6 +68,10 @@ frontend/zozos-shop/dist/
 frontend/vuyolwethu/node_modules/
 frontend/vuyolwethu/dist/
 
+# Family Tree
+frontend/family-tree/node_modules/
+frontend/family-tree/dist/
+
 # Portfolio
 frontend/portfolio/node_modules/
 frontend/portfolio/dist/
@@ -63,3 +83,7 @@ mobile/decoded-tasks/dist/
 
 # TypeScript build info
 *.tsbuildinfo
+
+# Vite cache
+.vite/
+!backend/**/.dockerignore

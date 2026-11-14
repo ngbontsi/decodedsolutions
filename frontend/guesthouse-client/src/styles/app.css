@@ -155,8 +155,15 @@ body {
 
 .btn-outline:hover { border-color: var(--text-muted); }
 
+.btn-outline.btn-danger { border-color: #ef4444; color: #ef4444; }
+.btn-outline.btn-danger:hover { background: #ef4444; color: #fff; }
+.btn-outline.btn-danger:disabled { opacity: 0.4; cursor: not-allowed; }
+
 .btn-sm { padding: 8px 14px; font-size: 13px; }
 .btn-block { width: 100%; justify-content: center; }
+
+@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+.spin { animation: spin 1s linear infinite; }
 
 /* ── Hero ── */
 
@@ -763,6 +770,14 @@ body {
   font-size: 20px;
   color: var(--text-muted);
   padding-top: 14px;
+}
+
+.booking-card-actions {
+  display: flex;
+  justify-content: flex-end;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+  margin-top: 12px;
 }
 
 /* ── Empty State ── */
