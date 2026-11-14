@@ -38,6 +38,11 @@ public class BetaGateFilter extends OncePerRequestFilter {
             HttpServletResponse response,
             FilterChain chain) throws ServletException, IOException {
 
+        if ("OPTIONS".equalsIgnoreCase(request.getMethod())) {
+            chain.doFilter(request, response);
+            return;
+        }
+
         if (expected.length == 0 || !request.getRequestURI().startsWith("/api/")) {
             chain.doFilter(request, response);
             return;
