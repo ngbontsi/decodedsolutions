@@ -3,7 +3,7 @@ spring:
     name: family-tree-service
 
   datasource:
-    url: ${DB_URL:jdbc:postgresql://localhost:5432/familytreedb}
+    url: ${DATASOURCE_URL:jdbc:postgresql://localhost:5432/familytreedb}
     username: ${DB_USERNAME:platformuser}
     password: ${DB_PASSWORD:platformpass}
     hikari:
