@@ -1,4 +1,4 @@
-package com.platform.familytree.shared.web;
+﻿package com.platform.familytree.shared.web;
 
 import java.util.List;
 
@@ -16,7 +16,7 @@ public class FamilyTreeCorsConfig {
 
     @Bean
     public FilterRegistrationBean<CorsFilter> familyTreeCorsFilter(
-            @Value("${family-tree.cors-origin:http://localhost:5173}") String allowedOrigin) {
+            @Value("${FAMILY_TREE_CORS_ORIGIN:http://localhost:5173}") String allowedOrigin) {
 
         CorsConfiguration config = new CorsConfiguration();
         config.setAllowedOrigins(List.of(allowedOrigin));
