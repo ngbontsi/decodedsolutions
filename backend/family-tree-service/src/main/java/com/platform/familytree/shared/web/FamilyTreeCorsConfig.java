@@ -14,12 +14,17 @@ import org.springframework.web.filter.CorsFilter;
 @Configuration
 public class FamilyTreeCorsConfig {
 
+    private static final org.slf4j.Logger log =
+            org.slf4j.LoggerFactory.getLogger(FamilyTreeCorsConfig.class);
     @Bean
     public FilterRegistrationBean<CorsFilter> familyTreeCorsFilter(
             @Value("${FAMILY_TREE_CORS_ORIGIN:http://localhost:5173}") String allowedOrigin) {
+        String effectiveOrigin = allowedOrigin == null ? "" : allowedOrigin.trim();
+
+        log.info("Family Tree CORS allowed origin: [{}]", effectiveOrigin);
 
         CorsConfiguration config = new CorsConfiguration();
-        config.setAllowedOrigins(List.of(allowedOrigin));
+        config.setAllowedOrigins(List.of(effectiveOrigin));
         config.setAllowedMethods(List.of(
                 "GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"
         ));
