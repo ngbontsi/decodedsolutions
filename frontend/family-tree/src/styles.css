@@ -1378,3 +1378,74 @@ p {
 .loading .banner {
   max-width: 460px;
 }
+
+/* ---------- private beta gate ---------- */
+
+.gate {
+  min-height: 100%;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background:
+    radial-gradient(circle at 50% 18%, rgba(212, 163, 115, 0.09), transparent 55%),
+    var(--bg);
+}
+
+.gate-card {
+  width: 100%;
+  max-width: 400px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  padding: 32px;
+  box-shadow: var(--shadow);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  text-align: center;
+}
+
+.gate-card .brand-mark {
+  margin: 0 auto;
+}
+
+.gate-card h1 {
+  font-family: var(--serif);
+  font-size: 26px;
+  font-weight: 500;
+  margin: 4px 0 0;
+  color: var(--text);
+}
+
+.gate-card p {
+  margin: 0 0 4px;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.gate-card input {
+  width: 100%;
+  background: var(--bg-soft);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  font: inherit;
+  padding: 12px 14px;
+  text-align: center;
+  letter-spacing: 0.08em;
+}
+
+.gate-card input:focus {
+  outline: none;
+  border-color: var(--gold-line);
+  box-shadow: 0 0 0 3px var(--gold-soft);
+}
+
+.gate-card .banner {
+  text-align: left;
+}
+
+.gate-card .btn {
+  justify-content: center;
+}

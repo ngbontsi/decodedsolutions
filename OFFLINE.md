@@ -394,6 +394,18 @@ All entity ownerIds are now enforced at the application layer.
 
 Additional users can be registered via `POST /api/auth/register`.
 
+### 10.4 Database-level RLS: installed but NOT enforced (verified 14 Nov 2026)
+
+`devops/db/rls/setup_rls.sql` defines 30 policies, but the database does not apply them:
+
+- No `ALTER TABLE ... FORCE ROW LEVEL SECURITY` anywhere in the file (0 occurrences)
+- The app connects as `platformuser`, the Postgres image's superuser and the table owner
+- Table owners bypass non-forced RLS; superusers bypass it entirely
+
+So **only the application-layer `ownerId` checks in 10.2 are actually enforced**. To make the database layer real: create a non-owner application role, `ALTER TABLE ... FORCE ROW LEVEL SECURITY` on every table, and verify with two different users. Tracked as S-2/S-3 in `../business/sprints/SPRINTS.md`.
+
+Related: `restaurant-service`, `guesthouse-service` and `marketplace-service` all use `anyRequest().permitAll()` and trust the `X-User-*` headers forwarded by the gateway, and the gateway publishes 8081-8085 plus 5433/6379 on the host.
+
 ---
 
 ## 11. Commands Cheat Sheet

@@ -27,9 +27,9 @@ function Test-Port([int]$port) {
 }
 
 # 1. Database
-$db = docker ps --filter "name=familytree-db" --filter "status=running" --format "{{.Names}}"
-if ($db -notcontains "familytree-db") {
-    Write-Host "Starting familytree-db..."
+$db = docker ps --filter "name=familytreedb" --filter "status=running" --format "{{.Names}}"
+if ($db -notcontains "familytreedb") {
+    Write-Host "Starting familytreedb..."
     docker start familytree-db | Out-Null
 } else {
     Write-Host "Database already running."
@@ -49,9 +49,9 @@ if (Test-Port 8085) {
     }
 
     Write-Host "Starting API on :8085..."
-    $env:DB_URL = "jdbc:postgresql://localhost:5432/familytree"
-    $env:DB_USERNAME = "familytree"
-    $env:DB_PASSWORD = "familytree"
+    $env:DB_URL = "jdbc:postgresql://localhost:5432/familytreedb"
+    $env:DB_USERNAME = "platformuser"
+    $env:DB_PASSWORD = "platformpass"
     $env:SERVER_PORT = "8085"
     Start-Process -FilePath (Join-Path $env:JAVA_HOME "bin\java.exe") `
         -ArgumentList @("-jar", $jar) -WorkingDirectory $service -WindowStyle Hidden

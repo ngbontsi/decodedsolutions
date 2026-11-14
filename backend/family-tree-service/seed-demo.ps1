@@ -4,24 +4,29 @@
 # Usage (service running on 8085):
 #   .\seed-demo.ps1
 #   .\seed-demo.ps1 -BaseUrl "http://localhost:8085/api/v1"
+#   .\seed-demo.ps1 -BaseUrl "https://family-tree.onrender.com/api/v1" -Passcode "the beta passphrase"
 
 param(
-    [string]$BaseUrl = "http://localhost:8085/api/v1"
+    [string]$BaseUrl = "http://localhost:8085/api/v1",
+    [string]$Passcode = ""
 )
 
 $ErrorActionPreference = "Stop"
 
+$headers = @{}
+if ($Passcode) { $headers["X-Beta-Passcode"] = $Passcode }
+
 function PostJson($path, $body) {
-    Invoke-RestMethod -Uri "$BaseUrl$path" -Method Post `
+    Invoke-RestMethod -Uri "$BaseUrl$path" -Method Post -Headers $headers `
         -ContentType "application/json" -Body ($body | ConvertTo-Json -Depth 6)
 }
 
 function PatchJson($path, $body) {
-    Invoke-RestMethod -Uri "$BaseUrl$path" -Method Patch `
+    Invoke-RestMethod -Uri "$BaseUrl$path" -Method Patch -Headers $headers `
         -ContentType "application/json" -Body ($body | ConvertTo-Json -Depth 6)
 }
 
-$existing = @(Invoke-RestMethod "$BaseUrl/persons")
+$existing = @(Invoke-RestMethod "$BaseUrl/persons" -Headers $headers)
 if ($existing.Count -gt 0) {
     Write-Host "Archive already has $($existing.Count) people. Nothing to do."
     exit 0

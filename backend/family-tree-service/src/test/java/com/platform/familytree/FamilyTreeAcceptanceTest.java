@@ -1,22 +1,20 @@
 package com.platform.familytree;
 
-import com.platform.familytree.community.ContributorService;
-import com.platform.familytree.evidence.Claim;
-import com.platform.familytree.evidence.ClaimEvidence;
-import com.platform.familytree.evidence.ClaimService;
-import com.platform.familytree.evidence.Document;
-import com.platform.familytree.evidence.EvidenceService;
-import com.platform.familytree.evidence.Source;
-import com.platform.familytree.family.CareRelationship;
-import com.platform.familytree.family.CareService;
-import com.platform.familytree.family.FamilyGroup;
-import com.platform.familytree.family.FamilyMembership;
-import com.platform.familytree.family.FamilyService;
-import com.platform.familytree.family.Parentage;
-import com.platform.familytree.family.ParentageService;
-import com.platform.familytree.identity.Person;
-import com.platform.familytree.identity.PersonName;
-import com.platform.familytree.identity.PersonService;
+import com.platform.familytree.community.service.ContributorService;
+import com.platform.familytree.evidence.model.Claim;
+import com.platform.familytree.evidence.model.ClaimEvidence;
+import com.platform.familytree.evidence.service.ClaimService;
+import com.platform.familytree.evidence.model.Document;
+import com.platform.familytree.evidence.service.EvidenceService;
+import com.platform.familytree.evidence.model.Source;
+import com.platform.familytree.family.model.*;
+import com.platform.familytree.family.service.CareService;
+import com.platform.familytree.family.service.FamilyService;
+import com.platform.familytree.family.service.ParentageService;
+import com.platform.familytree.family.service.UnionService;
+import com.platform.familytree.identity.model.Person;
+import com.platform.familytree.identity.model.PersonName;
+import com.platform.familytree.identity.service.PersonService;
 import com.platform.familytree.shared.error.DomainException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -49,7 +47,7 @@ class FamilyTreeAcceptanceTest {
     @Autowired private ClaimService claims;
     @Autowired private EvidenceService evidence;
     @Autowired private ContributorService contributors;
-    @Autowired private com.platform.familytree.family.UnionService unionService;
+    @Autowired private UnionService unionService;
     @Autowired private JdbcTemplate jdbc;
 
     @BeforeEach
@@ -297,9 +295,9 @@ class FamilyTreeAcceptanceTest {
     void unionNeedsTwoPeople() {
         UUID one = newPerson("Person One");
         assertThatThrownBy(() -> unionService.create(
-                com.platform.familytree.family.FamilyUnion.Type.MARRIAGE, null,
-                List.of(new com.platform.familytree.family.UnionService.ParticipantInput(
-                        one, com.platform.familytree.family.UnionParticipant.Role.SPOUSE)),
+                FamilyUnion.Type.MARRIAGE, null,
+                List.of(new UnionService.ParticipantInput(
+                        one, UnionParticipant.Role.SPOUSE)),
                 actor()))
                 .isInstanceOf(DomainException.class)
                 .hasMessageContaining("at least two participants");
@@ -310,12 +308,12 @@ class FamilyTreeAcceptanceTest {
     void unionWithTwoPeople() {
         UUID one = newPerson("Partner One");
         UUID two = newPerson("Partner Two");
-        var union = unionService.create(com.platform.familytree.family.FamilyUnion.Type.MARRIAGE,
+        var union = unionService.create(FamilyUnion.Type.MARRIAGE,
                 LocalDate.of(1999, 9, 9),
-                List.of(new com.platform.familytree.family.UnionService.ParticipantInput(
-                                one, com.platform.familytree.family.UnionParticipant.Role.SPOUSE),
-                        new com.platform.familytree.family.UnionService.ParticipantInput(
-                                two, com.platform.familytree.family.UnionParticipant.Role.SPOUSE)),
+                List.of(new UnionService.ParticipantInput(
+                                one, UnionParticipant.Role.SPOUSE),
+                        new UnionService.ParticipantInput(
+                                two, UnionParticipant.Role.SPOUSE)),
                 actor());
         assertThat(unionService.participantsOf(union.getId())).hasSize(2);
     }

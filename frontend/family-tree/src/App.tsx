@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useState, type FormEvent } from 'react'
 import {
   GitBranch,
   Home,
@@ -7,7 +7,7 @@ import {
   ScrollText,
   Users,
 } from 'lucide-react'
-import { ApiError, loadArchive } from './api'
+import { ApiError, getPasscode, loadArchive, rememberPasscode } from './api'
 import type { ArchiveData, Claim } from './types'
 import { Banner } from './components/ui'
 import {
@@ -44,6 +44,9 @@ export default function App() {
   const [personId, setPersonId] = useState<string | null>(null)
   const [dialog, setDialog] = useState<DialogState>(null)
   const [toast, setToast] = useState<string | null>(null)
+  const [locked, setLocked] = useState(false)
+  const [gateError, setGateError] = useState<string | null>(null)
+  const [passcodeDraft, setPasscodeDraft] = useState('')
 
   const load = useCallback(async () => {
     setRefreshing(true)
@@ -51,8 +54,15 @@ export default function App() {
       const next = await loadArchive()
       setData(next)
       setError(null)
+      setLocked(false)
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'Could not load the archive.')
+      if (err instanceof ApiError && (err.status === 401 || err.code === 'BETA_REQUIRED')) {
+        setLocked(true)
+        setGateError(getPasscode() ? 'That passcode was not accepted. Try again.' : null)
+        setError(null)
+      } else {
+        setError(err instanceof ApiError ? err.message : 'Could not load the archive.')
+      }
     } finally {
       setRefreshing(false)
     }
@@ -86,6 +96,43 @@ export default function App() {
   }
 
   const defaultPersonId = personId ?? data?.people[0]?.id ?? ''
+
+  const submitPasscode = async (event: FormEvent) => {
+    event.preventDefault()
+    const candidate = passcodeDraft.trim()
+    if (!candidate) return
+    rememberPasscode(candidate)
+    setGateError(null)
+    await load()
+  }
+
+  if (locked) {
+    return (
+      <div className="gate">
+        <form className="gate-card" onSubmit={submitPasscode}>
+          <div className="brand-mark">D</div>
+          <h1>Family archive</h1>
+          <p>This archive is private. Enter the passcode the family shared with you.</p>
+          {gateError && <Banner>{gateError}</Banner>}
+          <input
+            type="password"
+            value={passcodeDraft}
+            onChange={(e) => setPasscodeDraft(e.target.value)}
+            placeholder="Family passcode"
+            autoFocus
+            aria-label="Family passcode"
+          />
+          <button
+            className="btn btn-primary"
+            type="submit"
+            disabled={refreshing || !passcodeDraft.trim()}
+          >
+            {refreshing ? 'Checking...' : 'Open archive'}
+          </button>
+        </form>
+      </div>
+    )
+  }
 
   if (!data) {
     return (

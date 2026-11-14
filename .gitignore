@@ -1,3 +1,18 @@
+# Terraform
+**/.terraform/*
+*.tfstate
+*.tfstate.*
+*.tfvars
+*.tfvars.json
+!*.tfvars.example
+!*.tfvars.json.example
+crash.log
+crash.*.log
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
 # Maven
 target/
 *.jar
@@ -28,6 +43,7 @@ Thumbs.db
 
 # Docker
 *.dockerignore
+!/.dockerignore
 
 # Kubernetes (secrets)
 devops/k8s/**-secret.yaml
@@ -70,3 +86,4 @@ mobile/decoded-tasks/dist/
 
 # Vite cache
 .vite/
+!backend/**/.dockerignore
