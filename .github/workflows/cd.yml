@@ -1,0 +1,115 @@
+name: CD (Terraform)
+
+# Deploys infrastructure via Terraform on merge to long-lived branches.
+# Runs ONLY after CI passes (ci-gate), so failed tests block deployment.
+
+on:
+  workflow_run:
+    workflows: ["CI"]
+    types:
+      - completed
+    branches: [develop, main]
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  # Terraform will read these from GitHub Environments
+  NEON_API_KEY: ${{ secrets.NEON_API_KEY }}
+  RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+  RENDER_OWNER_ID: ${{ secrets.RENDER_OWNER_ID }}
+
+jobs:
+  # Determine which environment to deploy to
+  select-env:
+    name: select-environment
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    outputs:
+      environment: ${{ steps.set-env.outputs.environment }}
+      tf_dir: ${{ steps.set-env.outputs.tf_dir }}
+    steps:
+      - name: Map branch to environment
+        id: set-env
+        run: |
+          BRANCH="${{ github.event.workflow_run.head_branch }}"
+          if [ "$BRANCH" = "develop" ]; then
+            echo "environment=staging" >> $GITHUB_OUTPUT
+            echo "tf_dir=devops/terraform/environments/staging" >> $GITHUB_OUTPUT
+          elif [ "$BRANCH" = "main" ]; then
+            echo "environment=prod" >> $GITHUB_OUTPUT
+            echo "tf_dir=devops/terraform/environments/prod" >> $GITHUB_OUTPUT
+          else
+            echo "Unexpected branch: $BRANCH" && exit 1
+          fi
+
+  # Terraform plan
+  terraform-plan:
+    name: terraform-plan
+    needs: select-env
+    runs-on: ubuntu-latest
+    environment: ${{ needs.select-env.outputs.environment }}
+    defaults:
+      run:
+        working-directory: ${{ needs.select-env.outputs.tf_dir }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.17.1"
+
+      - name: Terraform Init
+        run: terraform init -input=false
+
+      - name: Terraform Validate
+        run: terraform validate
+
+      - name: Terraform Plan
+        id: plan
+        run: |
+          terraform plan -input=false -out=tfplan
+        env:
+          TF_VAR_jwt_secret: ${{ secrets.JWT_SECRET }}
+          TF_VAR_internal_shared_secret: ${{ secrets.INTERNAL_SHARED_SECRET }}
+
+      - name: Upload Plan
+        uses: actions/upload-artifact@v4
+        with:
+          name: tfplan-${{ needs.select-env.outputs.environment }}
+          path: ${{ needs.select-env.outputs.tf_dir }}/tfplan
+          retention-days: 1
+
+  # Terraform apply (requires approval for prod via Environment protection rules)
+  terraform-apply:
+    name: terraform-apply
+    needs: [select-env, terraform-plan]
+    runs-on: ubuntu-latest
+    environment: ${{ needs.select-env.outputs.environment }}
+    defaults:
+      run:
+        working-directory: ${{ needs.select-env.outputs.tf_dir }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.17.1"
+
+      - name: Terraform Init
+        run: terraform init -input=false
+
+      - name: Download Plan
+        uses: actions/download-artifact@v4
+        with:
+          name: tfplan-${{ needs.select-env.outputs.environment }}
+          path: .
+
+      - name: Terraform Apply
+        run: terraform apply -input=false tfplan
+        env:
+          TF_VAR_jwt_secret: ${{ secrets.JWT_SECRET }}
+          TF_VAR_internal_shared_secret: ${{ secrets.INTERNAL_SHARED_SECRET }}
