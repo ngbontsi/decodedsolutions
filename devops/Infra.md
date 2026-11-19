@@ -1,528 +1,229 @@
-# Decoded Platform — Infrastructure & Deployment Preparation
+# Infrastructure & Deployment — Decoded Platform
 
-**Working branch:** `feature/family-tree-beta-deploy`  
-**Target integration branch:** `develop`  
-**Production branch:** `main`  
-**Date:** 13 November 2026
+> **Status**: **ACTIVE** — Updated November 2026  
+> **Supersedes**: Original inspection guide (archived below)  
+> **Current Implementation**: Terraform modules + GitHub Actions CI/CD
 
-## 1. Objective
+---
 
-Prepare Decoded Platform for a controlled CI/CD deployment lifecycle using GitHub Actions.
+## Current Architecture
 
-Our intended branching and deployment model:
+### Deployment Targets
+| Environment | Branch | Database | Backend | Frontend | Trigger |
+|-------------|--------|----------|---------|----------|---------|
+| **Local** | Any | Docker Postgres (5 DBs) | Docker Compose (6 services) | Vite dev servers (7 apps) | Manual |
+| **Staging** | `develop` | Neon (1 project, 5 DBs) | Render Web Services (6) | Render Static Sites (7) | Auto (after CI) |
+| **Production** | `main` | Neon (1 project, 5 DBs) | Render Web Services (6) | Render Static Sites (7) | Manual approval |
 
-```text
-feature/*
-    |
-    | Pull Request
-    v
- develop  -------> STAGING
-    |
-    | Pull Request
-    v
-  main   --------> PRODUCTION
+**Family Tree**: Staging only (private beta), excluded from production.
+
+---
+
+## Terraform Structure
+
+```
+devops/terraform/
+├── modules/platform/              # Reusable module (single source of truth)
+│   ├── versions.tf                # Provider versions (neon ~>0.6, render ~>1.3)
+│   ├── variables.tf               # All configurable inputs
+│   ├── main.tf                    # Resources: Neon project + 5 DBs/roles + 6 Render WS + 7 Render Static
+│   └── outputs.tf                 # URLs, DB connections
+├── environments/
+│   ├── staging/                   # stage_name=staging, git_branch=develop, plan=starter
+│   │   ├── main.tf                # Calls module
+│   │   └── variables.tf           # Secrets: jwt_secret, internal_shared_secret
+│   └── prod/                      # stage_name=prod, git_branch=main, plan=standard
+│       ├── main.tf
+│       └── variables.tf           # Secrets: jwt_secret, internal_shared_secret
 ```
 
-### Deployment requirements
-
-**Staging (`develop`)**
-- API Gateway
-- Authentication
-- Restaurant
-- Guesthouse
-- Marketplace
-- Family Tree (private family beta)
-
-**Production (`main`)**
-- API Gateway
-- Authentication
-- Restaurant
-- Guesthouse
-- Marketplace
-- Family Tree excluded from production deployment for now.
-
-Family Tree remains part of the same monorepo and development workflow. It does not require another Git repository or another staging environment.
-
-Its database remains isolated from the other services.
+### Module Resources Created
+- **Neon**: 1 project (`platform-{stage}`), 5 databases (`authdb`, `restaurantdb`, `guesthousedb`, `marketplacedb`, `familytreedb`), 5 roles (`*_app`)
+- **Render Web Services**: 6 (api-gateway, auth, restaurant, guesthouse, marketplace, family-tree)
+- **Render Static Sites**: 7 (dashboard, butcher-shop, guesthouse-client, family-tree, zozos-shop, vuyolwethu, portfolio)
+- **Per-service env vars**: `SPRING_DATASOURCE_URL`, `SPRING_DATASOURCE_USERNAME`, `SPRING_DATASOURCE_PASSWORD`, `JWT_SECRET`, `INTERNAL_SHARED_SECRET`
 
 ---
 
-## 2. Important safety rules
+## CI/CD Pipeline
 
-Before starting:
+### CI (`.github/workflows/ci.yml`)
+**Triggers**: PR to `develop`/`main`, push to `develop`/`main`
 
-- Do not run `git reset --hard`.
-- Do not run `git clean -fd`.
-- Do not delete or recreate branches.
-- Do not run `docker compose down -v`.
-- Do not delete Docker volumes.
-- Do not run Terraform `apply` or `destroy`.
-- Do not commit or push until the changes have been reviewed.
-- Do not overwrite existing configuration files.
+**Jobs**:
+1. **policy** — Enforces branch model (feature→develop→main)
+2. **backend** — `mvn package` for 6 services (skip tests)
+3. **backend-tests** — Family Tree only (18 tests, real Postgres)
+4. **frontend** — `npm run build` for 7 apps (type-checks)
+5. **ci-gate** — Aggregates all; **must pass** for branch protection
 
-Our current branch contains staged and unstaged work. Both are important.
+### CD (`.github/workflows/cd.yml`)
+**Trigger**: `workflow_run` on CI completion (only if `ci-gate` succeeded)
+
+**Flow**:
+```
+CI succeeds on develop
+    │
+    ▼
+CD: select-environment → staging
+    │
+    ├── terraform-plan (artifact uploaded)
+    └── terraform-apply (auto, GitHub Env: staging)
+    │
+CI succeeds on main (after develop→main PR merge)
+    │
+    ▼
+CD: select-environment → prod
+    │
+    ├── terraform-plan
+    └── terraform-apply (MANUAL APPROVAL, GitHub Env: prod)
+```
+
+### Required GitHub Environments
+| Environment | Protection | Secrets |
+|-------------|------------|---------|
+| `staging` | None (auto) | `NEON_API_KEY`, `RENDER_API_KEY`, `RENDER_OWNER_ID`, `JWT_SECRET`, `INTERNAL_SHARED_SECRET` |
+| `prod` | **Required reviewers** | Same as staging (DIFFERENT values) |
 
 ---
 
-## 3. Step 1 — Confirm the project location
+## Local Development (docker-compose)
 
-**Execution**
+**File**: `devops/docker-compose.yml`
 
-Open PowerShell and run:
+**Services** (8 containers):
+- `db` — Postgres 16 (port 5433)
+- `redis` — Redis 7 (port 6379)
+- `database-provisioner` — Creates 5 DBs + 5 roles (`*_app`) on startup
+- `api-gateway` (8080), `auth-service` (8081), `restaurant-service` (8082), `guesthouse-service` (8083), `marketplace-service` (8084), `familytree-service` (8085)
+
+**Key Features**:
+- Fail-fast env vars (`${VAR:?error}`) — no silent defaults
+- Per-service `INTERNAL_SHARED_SECRET` for gateway→service auth
+- `database-provisioner` creates roles/databases with proper ownership
+- Healthchecks on Postgres before services start
+
+**Start**: `cd devops && docker compose up -d`
+**Stop**: `docker compose down`
+**Reset**: `docker compose down -v && docker compose up -d`
+
+---
+
+## Secrets Management
+
+### Local (`.env` — never committed)
+```bash
+JWT_SECRET=<openssl rand -base64 48>
+INTERNAL_SHARED_SECRET=<openssl rand -base64 32>
+DB_USERNAME=platformuser
+DB_PASSWORD=<strong password>
+BETA_PASSCODE=<optional>
+```
+
+### Staging/Production (GitHub Environments)
+| Secret | Purpose |
+|--------|---------|
+| `NEON_API_KEY` | Terraform Neon provider auth |
+| `RENDER_API_KEY` | Terraform Render provider auth |
+| `RENDER_OWNER_ID` | Render account owner ID |
+| `JWT_SECRET` | JWT signing (32+ chars) |
+| `INTERNAL_SHARED_SECRET` | Gateway→service auth |
+
+**Rotation**: Quarterly (90 days). See `business/docs/developer-docs/environment-setup/README.md#secrets-management`.
+
+---
+
+## Database Architecture
+
+### Per-Service Isolation
+| Service | Database | Role | Owner |
+|---------|----------|------|-------|
+| Auth | `authdb` | `auth_app` | Auth service |
+| Restaurant | `restaurantdb` | `restaurant_app` | Restaurant service |
+| Guesthouse | `guesthousedb` | `guesthouse_app` | Guesthouse service |
+| Marketplace | `marketplacedb` | `marketplace_app` | Marketplace service |
+| Family Tree | `familytreedb` | `familytree_app` | Family Tree service |
+
+### RLS Policies
+- **File**: `devops/db/rls/setup_rls.sql` (30 policies)
+- **Status**: **Installed but NOT enforced**
+- **Blocker**: App connects as `platformuser` (superuser + table owner)
+- **Needed**: Non-owner app role + `ALTER TABLE ... FORCE ROW LEVEL SECURITY` + 2-user verification
+- **Tracked**: S-2/S-3 in `business/sprints/SPRINTS.md`
+
+---
+
+## Branching & Deployment Rules
+
+```
+feature/* | fix/* | hotfix/*
+    │
+    ▼ PR (ci-gate must pass)
+develop (integration)
+    │
+    ▼ Auto-deploy via CD
+STAGING (Render + Neon)
+    │
+    ▼ PR (ci-gate must pass, manual approval)
+main (production)
+    │
+    ▼ Manual approval in CD
+PRODUCTION (Render + Neon)
+```
+
+**Branch Protection**: `develop` and `main` require `ci-gate` status check.
+
+**Family Tree**: Deploys to staging only (`BetaGateFilter` enforces passcode).
+
+---
+
+## Quick Commands
 
 ```powershell
-cd C:\Users\admin\Desktop\Projects\decoded-platform
+# Local
+cd devops && docker compose up -d
+cd devops && docker compose down -v && docker compose up -d  # full reset
 
-Get-Location
+# Terraform (local validation only)
+cd devops/terraform/environments/staging && terraform init -backend=false && terraform validate
+
+# Frontend deploy
+.\deploy.ps1
+
+# Check status
+.\check-status.ps1
+.\check-status.ps1 -Detailed
 ```
-
-**Intention**
-
-Ensure all subsequent commands execute from the correct project root.
-
-**Expected result**
-
-```text
-C:\Users\admin\Desktop\Projects\decoded-platform
-```
-
-If the directory differs, stop and navigate to the correct project directory.
 
 ---
 
-## 4. Step 2 — Confirm GitHub Actions configuration
+## Archived: Original Inspection Guide (Nov 13, 2026)
 
-**Execution**
+<details>
+<summary>Original step-by-step inspection guide (historical)</summary>
 
-```powershell
-Get-ChildItem .github -Force
+The original `Infra.md` was written as a step-by-step inspection guide for a specific session on the `feature/family-tree-beta-deploy` branch. It contained:
 
-Get-ChildItem .github\workflows -Force
-```
+- Steps 1-3: Project location, GitHub Actions config, Git status
+- Steps 4-6: Staged/unstaged changes, empty files inspection
+- Steps 7-9: Docker Compose, Dockerfiles, Family Tree migration duplicates
+- Steps 10-13: Deployment architecture design, future checklist
 
-**Intention**
+**Status**: All inspection steps completed. CI/CD workflows created. Terraform restructured into module + environments. No further inspection needed.
 
-Determine whether GitHub Actions workflows already exist.
-
-**Expected result**
-
-The `.github` directory contains a `workflows` directory, but the workflows directory is empty.
-
-**Interpretation**
-
-We currently have no project-owned GitHub Actions workflows. We will need to design the CI/CD pipeline.
-
-Do not create workflow files yet.
+</details>
 
 ---
 
-## 5. Step 3 — Confirm Git status and branches
-
-**Execution**
-
-```powershell
-git status --short --branch
-
-git branch -vv
-
-git branch -a
-
-git remote -v
-```
-
-**Intention**
-
-Identify:
-- Current working branch.
-- Existing local and remote branches.
-- Uncommitted changes.
-- GitHub repository connection.
-- Whether branches track their remote counterparts.
-
-**Previously confirmed results**
-
-Current branch:
-
-```text
-feature/family-tree-beta-deploy
-```
-
-Existing branches include:
-
-```text
-develop
-main
-feature/family-tree-beta-deploy
-create/family_tree
-fix/60-gateway-trust-boundaries
-```
-
-Remote:
-
-```text
-origin
-https://github.com/ngbontsi/decodedsolutions.git
-```
-
-**Important**
-
-The feature branch currently has staged and unstaged changes. Preserve both.
-
----
-
-## 6. Step 4 — Understand staged and unstaged changes
-
-**Execution A — Staged changes**
-
-```powershell
-git diff --cached --stat
-```
-
-**Intention**
-
-Identify files already added to Git's staging area.
-
-**Previously observed**
-
-- Database provisioning script.
-- Family Tree SQL schema files.
-- Terraform environment variable files.
-
-There are 14 staged files.
-
-**Execution B — Unstaged changes**
-
-```powershell
-git diff --stat
-```
-
-**Intention**
-
-Identify modifications that have not yet been staged.
-
-**Previously observed**
-
-- Backend Dockerfiles.
-- Family Tree ContributorController.
-- Database initialization script.
-- Docker Compose configuration.
-- Database provisioning script.
-
-There are 10 unstaged files.
-
-**Important observation**
-
-The provisioning script appears in both staged and unstaged changes. Its staged version is empty, while the working copy contains additional content.
-
-We need to inspect this carefully before committing.
-
----
-
-## 7. Step 5 — Inspect incomplete files
-
-**Execution**
-
-```powershell
-Get-Item devops\db\provision-databases.sh,
-          devops\terraform\environments\dev\terraform.tfvars,
-          devops\terraform\environments\staging\terraform.tfvars,
-          devops\terraform\environments\prod\terraform.tfvars |
-    Select-Object FullName, Length
-
-Get-Content devops\db\provision-databases.sh
-```
-
-**Intention**
-
-Determine whether the files are genuinely empty or simply have not been staged correctly.
-
-**Expected observations**
-
-The provisioning script should contain the database provisioning logic.
-
-The three Terraform `.tfvars` files may currently be empty.
-
-**What to do**
-
-- If the provisioning script contains code, preserve it.
-- If Terraform files are empty, do not invent values or credentials.
-- We will decide what belongs in each environment configuration later.
-
----
-
-## 8. Step 6 — Inspect committed feature branch changes
-
-**Execution A**
-
-```powershell
-git log --oneline origin/develop..HEAD
-```
-
-**Intention**
-
-Identify commits on the current feature branch that are not yet present in remote `develop`.
-
-**Expected result**
-
-A list of commits, or no output if there are no additional commits.
-
-**Execution B**
-
-```powershell
-git diff --name-status origin/develop...HEAD
-```
-
-**Intention**
-
-Identify the committed files that differ between the feature branch and `develop`.
-
-**Expected result**
-
-A list of added, modified or deleted files.
-
-**Important distinction**
-
-These commands inspect committed branch differences. They do not include all your uncommitted working changes.
-
----
-
-## 9. Step 7 — Inspect Docker Compose and database provisioning
-
-**Execution**
-
-```powershell
-git diff -- devops/docker-compose.yml devops/db/init.sql devops/db/provision-databases.sh
-```
-
-**Intention**
-
-Review the infrastructure changes before merging.
-
-We need to verify:
-
-1. PostgreSQL healthcheck.
-2. Database provisioner service.
-3. Database creation logic.
-4. Backend service dependencies.
-5. Family Tree database isolation.
-6. Existing persistent database volumes.
-
-**Expected architecture**
-
-The PostgreSQL instance should provide separate databases:
-
-```text
-authdb
-restaurantdb
-guesthousedb
-marketplacedb
-familytreedb
-```
-
-The database provisioner should create missing databases without deleting or recreating existing ones.
-
-The provisioner should finish successfully before backend services start.
-
-**Expected provisioner behaviour**
-
-```text
-Checking Decoded Platform databases...
-authdb already exists. Leaving it untouched.
-restaurantdb already exists. Leaving it untouched.
-guesthousedb already exists. Leaving it untouched.
-marketplacedb already exists. Leaving it untouched.
-familytreedb already exists. Leaving it untouched.
-Database provisioning completed successfully.
-```
-
-Do not delete existing databases or Docker volumes.
-
----
-
-## 10. Step 8 — Inspect backend Dockerfiles and Family Tree controller
-
-**Execution**
-
-```powershell
-git diff -- backend
-```
-
-**Intention**
-
-Understand the code and Docker build changes.
-
-We need to establish:
-
-- Whether Dockerfiles have been updated consistently.
-- Whether Maven dependencies are cached correctly.
-- Whether builds can work with unreliable internet access.
-- Whether the Family Tree controller change is intentional.
-- Whether the changes affect the other backend services.
-
-**Expected result**
-
-A readable list of code differences.
-
-If the output is too large, inspect individual files:
-
-```powershell
-git diff -- backend/api-gateway/Dockerfile
-
-git diff -- backend/auth-service/Dockerfile
-
-git diff -- backend/family-tree-service/Dockerfile
-
-git diff -- backend/family-tree-service/src/main/java/com/platform/familytree/community/controller/ContributorController.java
-
-git diff -- backend/restaurant-service/Dockerfile
-
-git diff -- backend/guesthouse-service/Dockerfile
-
-git diff -- backend/marketplace-service/Dockerfile
-```
-
-Do not modify the files during this inspection.
-
----
-
-## 11. Step 9 — Check duplicate Family Tree migrations
-
-**Execution**
-
-```powershell
-Get-ChildItem backend\family-tree-service\src\main\resources\db\migration -File |
-    ForEach-Object {
-        $other = Join-Path "devops\db\schema" $_.Name
-
-        if (Test-Path $other) {
-            $a = (Get-FileHash $_.FullName -Algorithm SHA256).Hash
-            $b = (Get-FileHash $other -Algorithm SHA256).Hash
-
-            [PSCustomObject]@{
-                Migration = $_.Name
-                Identical = ($a -eq $b)
-            }
-        }
-    } | Format-Table -AutoSize
-```
-
-**Intention**
-
-Establish whether the SQL migration files under `devops/db/schema` are identical to those under the Family Tree service.
-
-**Expected result**
-
-A table containing migration filenames and whether the files are identical.
-
-Example:
-
-```text
-Migration                                  Identical
-----------                                 ---------
-V1__extensions_and_archive.sql             True
-V2__reference_places_and_sources.sql        True
-V3__identity.sql                           True
-```
-
-**Architectural decision**
-
-The Family Tree service's own Flyway migration directory should remain authoritative unless we deliberately introduce a central migration runner.
-
-We should avoid maintaining duplicate migration sources unnecessarily.
-
-Do not delete either directory until we have inspected references and confirmed the intended approach.
-
----
-
-## 12. Step 10 — Review the existing deployment architecture
-
-Once the preceding inspections are complete, we will design the GitHub Actions pipeline.
-
-### Required workflow behaviour
-
-**For pull requests into `develop`:**
-
-- Compile affected services.
-- Run automated tests.
-- Validate Docker build configurations.
-- Prevent broken code from entering staging.
-
-**After merging into `develop`:**
-
-- Deploy staging services.
-- Deploy Family Tree to staging.
-- Apply Family Tree migrations to the staging `familytreedb`.
-- Keep Family Tree private and restrict access to invited family members.
-
-**For pull requests into `main`:**
-
-- Run production validation.
-- Review deployment impact.
-- Require approval before production promotion.
-
-**After merging into `main`:**
-
-- Deploy production services.
-- Do not deploy Family Tree.
-- Do not run Family Tree production migrations.
-
-### Important deployment distinction
-
-A service can exist in the monorepo without being deployed to every environment.
-
-Family Tree is part of development and staging, but it is not yet part of the commercial production deployment.
-
----
-
-## 13. Step 11 — Future implementation checklist
-
-Do not execute this section yet. It is our planned work after reviewing the inspection results.
-
-- [ ] Review and reconcile staged and unstaged changes.
-- [ ] Confirm the authoritative Family Tree migration location.
-- [ ] Review database provisioning logic.
-- [ ] Review Dockerfile build changes.
-- [ ] Review Terraform configuration and provider compatibility.
-- [ ] Confirm `develop` and `main` deployment requirements.
-- [ ] Create GitHub Actions CI workflow.
-- [ ] Create staging deployment workflow for `develop`.
-- [ ] Include Family Tree in staging deployment.
-- [ ] Create production deployment workflow for `main`.
-- [ ] Exclude Family Tree from production deployment.
-- [ ] Configure GitHub repository secrets and environment protection.
-- [ ] Test staging deployment.
-- [ ] Verify production deployment rules without deploying unfinished changes.
-
----
-
-## 14. Feedback template
-
-When connectivity is stable, send the command results in this format.
-
-| Step | Result |
-|---|---|
-| 1. Project location | |
-| 2. GitHub workflows | |
-| 3. Git branches | |
-| 4. Staged/unstaged changes | |
-| 5. Empty files | |
-| 6. Branch differences | |
-| 7. Docker Compose | |
-| 8. Dockerfiles | |
-| 9. Migration comparison | |
-
-If a command returns an error, record the complete error message.
-
-If a result differs from the expected output, do not attempt to fix it independently. Share the result so we can decide the safest next action.
-
----
-
-## Final objective
-
-We are building a controlled development and release process for Decoded Platform.
-
-Our principle:
-
-**Develop, integrate, validate, stage, approve, and promote to production.**
-
-We want a deployment architecture that supports future services without compromising existing data, private family information, or production stability.
+## Related Documents
+
+| Document | Purpose |
+|----------|---------|
+| `AGENTS.md` | Platform operating manual |
+| `business/sprints/SPRINTS.md` | Sprint board |
+| `business/docs/developer-docs/environment-setup/README.md` | Full environment setup |
+| `business/docs/developer-docs/architecture.md` | System architecture |
+| `business/docs/developer-docs/api-reference.md` | API endpoints |
+| `devops/db/rls/setup_rls.sql` | RLS policies |
+| `.github/workflows/ci.yml` | CI pipeline |
+| `.github/workflows/cd.yml` | CD pipeline |
