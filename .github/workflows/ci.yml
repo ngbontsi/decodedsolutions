@@ -1,0 +1,190 @@
+name: CI
+
+# Gate for the branch model:
+#   feature/* | fix/* | hotfix/*  ->  develop  ->  main
+#
+# Nothing reaches main except through develop, and nothing reaches either
+# long-lived branch without this workflow reporting `ci-gate` as green.
+# Branch protection requires that check, so the rule is enforced by GitHub,
+# not by convention.
+
+on:
+  pull_request:
+    branches: [main, develop]
+  push:
+    branches: [main, develop]
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # Enforces the promotion path. This is the rule that was bypassed when
+  # feature branches were merged straight into main.
+  # ---------------------------------------------------------------------------
+  policy:
+    name: policy
+    runs-on: ubuntu-latest
+    steps:
+      - name: Enforce promotion path
+        env:
+          EVENT: ${{ github.event_name }}
+          BASE: ${{ github.base_ref }}
+          HEAD: ${{ github.head_ref }}
+        run: |
+          set -euo pipefail
+          if [ "$EVENT" != "pull_request" ]; then
+            echo "Not a pull request ($EVENT) - promotion path not applicable."
+            exit 0
+          fi
+
+          echo "Pull request: ${HEAD} -> ${BASE}"
+
+          if [ "$BASE" = "main" ] && [ "$HEAD" != "develop" ]; then
+            echo "::error::main only accepts pull requests from develop. This one comes from '${HEAD}'."
+            echo "::error::Open it against develop instead, then promote develop -> main."
+            exit 1
+          fi
+
+          case "$HEAD" in
+            main|develop)
+              # Allowed only for develop <- main, which is how production
+              # hotfixes are flowed back into the integration branch.
+              if [ "$HEAD" = "main" ] && [ "$BASE" = "develop" ]; then
+                echo "Allowed: syncing develop from main."
+                exit 0
+              fi
+              if [ "$HEAD" = "develop" ] && [ "$BASE" = "main" ]; then
+                echo "Allowed: promotion develop -> main."
+                exit 0
+              fi
+              echo "::error::${HEAD} cannot be the source of a pull request into ${BASE}."
+              exit 1
+              ;;
+          esac
+
+          if [ "$BASE" != "develop" ] && [ "$BASE" != "main" ]; then
+            echo "::error::Pull requests must target develop (or main from develop). Target was '${BASE}'."
+            exit 1
+          fi
+
+          echo "OK: ${HEAD} -> ${BASE} follows the branch model."
+
+  # ---------------------------------------------------------------------------
+  # Six Spring Boot services. Tests are skipped here because only
+  # family-tree-service has any, and those need a database (see backend-tests).
+  # ---------------------------------------------------------------------------
+  backend:
+    name: backend
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        service:
+          - api-gateway
+          - auth-service
+          - family-tree-service
+          - guesthouse-service
+          - marketplace-service
+          - restaurant-service
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+      - name: Build ${{ matrix.service }}
+        working-directory: backend/${{ matrix.service }}
+        run: mvn -B -ntp -DskipTests package
+
+  # ---------------------------------------------------------------------------
+  # family-tree-service is the only service with tests, and they run against a
+  # real PostgreSQL (see src/test/resources/application-test.yaml).
+  # ---------------------------------------------------------------------------
+  backend-tests:
+    name: backend-tests
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: familytree
+          POSTGRES_PASSWORD: familytree
+          POSTGRES_DB: familytree_test
+        ports:
+          - 5433:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+      - name: Test family-tree-service
+        working-directory: backend/family-tree-service
+        run: mvn -B -ntp test
+
+  # ---------------------------------------------------------------------------
+  # Seven Vite apps. `npm run build` is `tsc -b && vite build`, so this also
+  # type-checks the frontend.
+  # ---------------------------------------------------------------------------
+  frontend:
+    name: frontend
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        app:
+          - butcher-shop
+          - decoded_dashboard
+          - family-tree
+          - guesthouse-client
+          - portfolio
+          - vuyolwethu
+          - zozos-shop
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/${{ matrix.app }}/package-lock.json
+      - name: Install ${{ matrix.app }}
+        working-directory: frontend/${{ matrix.app }}
+        run: npm ci --no-audit --no-fund
+      - name: Build ${{ matrix.app }}
+        working-directory: frontend/${{ matrix.app }}
+        run: npm run build
+
+  # ---------------------------------------------------------------------------
+  # Single check name to require in branch protection. Without this you would
+  # have to list every matrix leg and update the rule whenever a service or app
+  # is added.
+  # ---------------------------------------------------------------------------
+  ci-gate:
+    name: ci-gate
+    if: always()
+    needs: [policy, backend, backend-tests, frontend]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Verify every job succeeded
+        env:
+          NEEDS: ${{ toJSON(needs) }}
+        run: |
+          set -euo pipefail
+          echo "$NEEDS"
+          if echo "$NEEDS" | grep -Eq '"result": *"(failure|cancelled)"'; then
+            echo "::error::At least one required job failed or was cancelled."
+            exit 1
+          fi
+          echo "All required jobs succeeded."

@@ -1,4 +1,4 @@
-﻿package com.platform.familytree.shared.web;
+package com.platform.familytree.shared.web;
 
 import java.util.List;
 

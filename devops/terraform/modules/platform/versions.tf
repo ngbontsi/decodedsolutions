@@ -1,4 +1,8 @@
+# modules/platform/versions.tf
+
 terraform {
+  required_version = ">= 1.5.0"
+
   required_providers {
     neon = {
       source  = "kislerdm/neon"
@@ -9,11 +13,4 @@ terraform {
       version = "~> 1.3.0"
     }
   }
-}
-
-provider "neon" {
-  # Reads NEON_API_KEY from environment variables
-}
-provider "render" {
-  # Reads RENDER_API_KEY and RENDER_OWNER_ID from your environment variables
 }

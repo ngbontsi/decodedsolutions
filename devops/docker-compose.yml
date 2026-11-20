@@ -4,11 +4,12 @@ services:
     ports:
       - "8080:8080"
     environment:
-      - JWT_SECRET=${JWT_SECRET:-change-me-to-a-secure-random-string-at-least-32-chars}
+      - JWT_SECRET=${JWT_SECRET:?JWT_SECRET must be set (copy .env.example to .env)}
       - AUTH_SERVICE_URI=http://auth-service:8081
       - RESTAURANT_SERVICE_URI=http://restaurant-service:8082
       - GUESTHOUSE_SERVICE_URI=http://guesthouse-service:8083
       - MARKETPLACE_SERVICE_URI=http://marketplace-service:8084
+      - INTERNAL_SHARED_SECRET=${INTERNAL_SHARED_SECRET:?INTERNAL_SHARED_SECRET must be set}
     depends_on:
       - redis
     networks:
@@ -20,21 +21,23 @@ services:
       - "8081:8081"
     environment:
       - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/authdb
-      - SPRING_DATASOURCE_USERNAME=${DB_USERNAME:-platformuser}
-      - SPRING_DATASOURCE_PASSWORD=${DB_PASSWORD:-platformpass}
-      - JWT_SECRET=${JWT_SECRET:-change-me-to-a-secure-random-string-at-least-32-chars}
+      - SPRING_DATASOURCE_USERNAME=${DB_USERNAME:?DB_USERNAME must be set}
+      - SPRING_DATASOURCE_PASSWORD=${DB_PASSWORD:?DB_PASSWORD must be set}
+      - JWT_SECRET=${JWT_SECRET:?JWT_SECRET must be set}
+      - INTERNAL_SHARED_SECRET=${INTERNAL_SHARED_SECRET:?INTERNAL_SHARED_SECRET must be set}
     depends_on:
       database-provisioner:
         condition: service_completed_successfully
     networks:
       - platform-network
+
   database-provisioner:
     image: postgres:16-alpine
     environment:
       - PGHOST=db
       - PGPORT=5432
-      - PGUSER=${DB_USERNAME:-platformuser}
-      - PGPASSWORD=${DB_PASSWORD:-platformpass}
+      - PGUSER=${DB_USERNAME:?DB_USERNAME must be set}
+      - PGPASSWORD=${DB_PASSWORD:?DB_PASSWORD must be set}
       - PGDATABASE=postgres
     depends_on:
       db:
@@ -43,17 +46,24 @@ services:
       - /bin/sh
       - -ec
       - |
-        echo "Checking Decoded Platform databases..."
-
-        for database in authdb restaurantdb guesthousedb marketplacedb familytreedb; do
-          if psql -tAc "SELECT 1 FROM pg_database WHERE datname = '$$database'" | grep -q 1; then
-            echo "$$database already exists. Leaving it untouched."
+        echo "Creating roles and databases for each service..."
+        for dbname in authdb restaurantdb guesthousedb marketplacedb familytreedb; do
+          role="${dbname}_app"
+          echo "Creating role: $role"
+          psql -c "CREATE ROLE $role WITH LOGIN PASSWORD 'changeme';" || echo "Role $role exists"
+          
+          echo "Creating database: $dbname"
+          if psql -tAc "SELECT 1 FROM pg_database WHERE datname = '$dbname'" | grep -q 1; then
+            echo "$dbname already exists."
           else
-            echo "Creating database: $$database"
-            createdb "$$database"
+            createdb -O $role $dbname
+            echo "Created $dbname owned by $role"
           fi
         done
-
+        
+        echo "Running init.sql for extensions and base setup..."
+        psql -f /docker-entrypoint-initdb.d/init.sql
+        
         echo "Database provisioning completed successfully."
     restart: "no"
     networks:
@@ -65,8 +75,9 @@ services:
       - "8082:8082"
     environment:
       - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/restaurantdb
-      - SPRING_DATASOURCE_USERNAME=${DB_USERNAME:-platformuser}
-      - SPRING_DATASOURCE_PASSWORD=${DB_PASSWORD:-platformpass}
+      - SPRING_DATASOURCE_USERNAME=${DB_USERNAME:?DB_USERNAME must be set}
+      - SPRING_DATASOURCE_PASSWORD=${DB_PASSWORD:?DB_PASSWORD must be set}
+      - INTERNAL_SHARED_SECRET=${INTERNAL_SHARED_SECRET:?INTERNAL_SHARED_SECRET must be set}
     depends_on:
       database-provisioner:
         condition: service_completed_successfully
@@ -79,8 +90,9 @@ services:
       - "8083:8083"
     environment:
       - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/guesthousedb
-      - SPRING_DATASOURCE_USERNAME=${DB_USERNAME:-platformuser}
-      - SPRING_DATASOURCE_PASSWORD=${DB_PASSWORD:-platformpass}
+      - SPRING_DATASOURCE_USERNAME=${DB_USERNAME:?DB_USERNAME must be set}
+      - SPRING_DATASOURCE_PASSWORD=${DB_PASSWORD:?DB_PASSWORD must be set}
+      - INTERNAL_SHARED_SECRET=${INTERNAL_SHARED_SECRET:?INTERNAL_SHARED_SECRET must be set}
     depends_on:
       database-provisioner:
         condition: service_completed_successfully
@@ -93,8 +105,9 @@ services:
       - "8084:8084"
     environment:
       - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/marketplacedb
-      - SPRING_DATASOURCE_USERNAME=${DB_USERNAME:-platformuser}
-      - SPRING_DATASOURCE_PASSWORD=${DB_PASSWORD:-platformpass}
+      - SPRING_DATASOURCE_USERNAME=${DB_USERNAME:?DB_USERNAME must be set}
+      - SPRING_DATASOURCE_PASSWORD=${DB_PASSWORD:?DB_PASSWORD must be set}
+      - INTERNAL_SHARED_SECRET=${INTERNAL_SHARED_SECRET:?INTERNAL_SHARED_SECRET must be set}
     depends_on:
       database-provisioner:
         condition: service_completed_successfully
@@ -107,21 +120,23 @@ services:
       - "8085:8085"
     environment:
       - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/familytreedb
-      - SPRING_DATASOURCE_USERNAME=${DB_USERNAME:-platformuser}
-      - SPRING_DATASOURCE_PASSWORD=${DB_PASSWORD:-platformpass}
+      - SPRING_DATASOURCE_USERNAME=${DB_USERNAME:?DB_USERNAME must be set}
+      - SPRING_DATASOURCE_PASSWORD=${DB_PASSWORD:?DB_PASSWORD must be set}
+      - INTERNAL_SHARED_SECRET=${INTERNAL_SHARED_SECRET:?INTERNAL_SHARED_SECRET must be set}
+      - BETA_PASSCODE=${BETA_PASSCODE:-}
     depends_on:
-        database-provisioner:
-          condition: service_completed_successfully
+      database-provisioner:
+        condition: service_completed_successfully
     networks:
-        - platform-network
+      - platform-network
 
   db:
     image: postgres:16-alpine
     ports:
       - "5433:5432"
     environment:
-      - POSTGRES_USER=${DB_USERNAME:-platformuser}
-      - POSTGRES_PASSWORD=${DB_PASSWORD:-platformpass}
+      - POSTGRES_USER=${DB_USERNAME:?DB_USERNAME must be set}
+      - POSTGRES_PASSWORD=${DB_PASSWORD:?DB_PASSWORD must be set}
     volumes:
       - postgres-data:/var/lib/postgresql/data
       - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql
